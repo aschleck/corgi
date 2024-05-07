@@ -102,15 +102,15 @@ def c_ts_project(name, srcs = None, css_deps = None, data = None, deps = None):
         srcs = native.glob(["*.test.ts", "*.test.tsx"]),
         deps = [
             ":%s" % name,
-            "@dev_april_corgi//:node_modules/@types/jest",
-            "@dev_april_corgi//:node_modules/jest-environment-jsdom",
+            "//:node_modules/@types/jest",
+            "//:node_modules/jest-environment-jsdom",
         ],
     )
 
     jest_test(
         name = "jest",
         config = "@dev_april_corgi//build_defs:jest_config",
-        node_modules = "@dev_april_corgi//:node_modules",
+        node_modules = "//:node_modules",
         data = [
             ":tests",
         ],
