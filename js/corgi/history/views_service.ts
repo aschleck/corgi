@@ -1,4 +1,4 @@
-import { checkExists } from 'js/common/asserts';
+import { checkExists } from '../../common/asserts';
 
 import { Service, ServiceResponse } from '../service';
 

@@ -1,6 +1,6 @@
-import * as arrays from 'js/common/arrays';
-import { checkArgument, checkExists } from 'js/common/asserts';
-import { deepEqual } from 'js/common/comparisons';
+import * as arrays from '../common/arrays';
+import { checkArgument, checkExists } from '../common/asserts';
+import { deepEqual } from '../common/comparisons';
 
 import { AnyProperties, Properties } from './elements';
 

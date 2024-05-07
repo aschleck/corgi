@@ -1,6 +1,6 @@
-import { Controller, Response } from 'js/corgi/controller';
-import { EmptyDeps } from 'js/corgi/deps';
-import { CorgiEvent } from 'js/corgi/events';
+import { Controller, Response } from '../corgi/controller';
+import { EmptyDeps } from '../corgi/deps';
+import { CorgiEvent } from '../corgi/events';
 
 import { ACTION, CHANGED } from './events';
 

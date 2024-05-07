@@ -8,6 +8,6 @@ js_library(
         "index.js",
     ],
     deps = [
-        "@dev_april_corgi//:node_modules/postcss",
+        "//:node_modules/postcss",
     ],
 )

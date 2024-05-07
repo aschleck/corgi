@@ -1,8 +1,8 @@
-import { deepEqual } from 'js/common/comparisons';
-import { debugMode } from 'js/common/debug';
-import { maybeMemoized } from 'js/common/memoized';
-import { fetchGlobalDeps } from 'js/corgi/deps';
-import { HistoryService } from 'js/corgi/history/history_service';
+import { deepEqual } from '../common/comparisons';
+import { debugMode } from '../common/debug';
+import { maybeMemoized } from '../common/memoized';
+import { fetchGlobalDeps } from '../corgi/deps';
+import { HistoryService } from '../corgi/history/history_service';
 
 import { InitialDataKey } from './data';
 

@@ -1,4 +1,4 @@
-import * as corgi from 'js/corgi';
+import * as corgi from '../corgi';
 
 import { InputController, State } from './input_controller';
 

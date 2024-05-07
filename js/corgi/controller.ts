@@ -1,5 +1,5 @@
-import { Debouncer } from 'js/common/debouncer';
-import { Disposable } from 'js/common/disposable';
+import { Debouncer } from '../common/debouncer';
+import { Disposable } from '../common/disposable';
 
 import { SupportedElement } from './dom';
 import { EventSpec, qualifiedName } from './events';

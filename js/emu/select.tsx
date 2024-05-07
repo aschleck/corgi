@@ -1,4 +1,4 @@
-import * as corgi from 'js/corgi';
+import * as corgi from '../corgi';
 
 import { SelectController, State } from './select_controller';
 

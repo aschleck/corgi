@@ -1,6 +1,6 @@
-import { checkArgument, checkExists, checkExhaustive } from 'js/common/asserts';
-import { deepEqual } from 'js/common/comparisons';
-import { Disposable } from 'js/common/disposable';
+import { checkArgument, checkExists, checkExhaustive } from '../common/asserts';
+import { deepEqual } from '../common/comparisons';
+import { Disposable } from '../common/disposable';
 
 import { Controller, ControllerCtor, ControllerDeps, ControllerDepsMethod, Response as ControllerResponse } from './controller';
 import { elementFinder, parentFinder, SupportedElement } from './dom';

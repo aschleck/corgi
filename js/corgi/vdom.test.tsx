@@ -1,5 +1,5 @@
-import { waitSettled } from 'js/common/promises';
-import * as corgi from 'js/corgi';
+import { waitSettled } from '../common/promises';
+import * as corgi from '../corgi';
 
 afterEach(() => {
   document.body.innerHTML = '';

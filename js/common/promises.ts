@@ -1,4 +1,4 @@
-import { checkArgument } from 'js/common/asserts';
+import { checkArgument } from './asserts';
 
 export function waitSettled(): Promise<void> {
   return waitTicks(640); // 640 ticks ought to be enough for anybody...

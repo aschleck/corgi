@@ -3,10 +3,10 @@ import fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import fetch from 'node-fetch';
 import { fastifyRequestContextPlugin, requestContext } from '@fastify/request-context';
 
-import { checkExists } from 'js/common/asserts';
-import { deepEqual } from 'js/common/comparisons';
-import { Fragment, Properties, VElementOrPrimitive } from 'js/corgi';
-import { ElementFactory } from 'js/corgi/vdom';
+import { checkExists } from '../common/asserts';
+import { deepEqual } from '../common/comparisons';
+import { Fragment, Properties, VElementOrPrimitive } from '../corgi';
+import { ElementFactory } from '../corgi/vdom';
 
 import { InitialDataKey } from './data';
 

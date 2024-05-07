@@ -2,7 +2,7 @@
 //
 // Oh well!
 
-import { checkArgument, checkExists } from 'js/common/asserts';
+import { checkArgument, checkExists } from './asserts';
 
 export interface TFontFace {
   family: string;

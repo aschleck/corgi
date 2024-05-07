@@ -1,7 +1,7 @@
-import * as corgi from 'js/corgi';
-import { Controller, Response } from 'js/corgi/controller';
-import { EmptyDeps } from 'js/corgi/deps';
-import { Service } from 'js/corgi/service';
+import * as corgi from '../corgi';
+import { Controller, Response } from '../corgi/controller';
+import { EmptyDeps } from '../corgi/deps';
+import { Service } from '../corgi/service';
 
 export class DialogService extends Service<EmptyDeps> {
 

@@ -18,7 +18,7 @@ def esbuild_binary(
         bazel_sandbox_plugin = False,
         config = ":" + name + "/esbuild.config.mjs",
         entry_point = entry_point,
-        tsconfig = "@dev_april_corgi//:tsconfig",
+        tsconfig = "//:tsconfig",
         srcs = [
             entry_point,
         ],
@@ -40,6 +40,7 @@ def esbuild_binary(
             "tailwind.theme.mjs",
         ],
         deps = [
+            "//:node_modules/autoprefixer",
             "@dev_april_corgi//third_party/deanc-esbuild-plugin-postcss",
         ],
     )
@@ -125,7 +126,7 @@ def ts_project(name, srcs, deps = None, **kwargs):
         deps = deps or [],
         srcs = srcs,
         transpiler = "tsc",
-        tsconfig = "@dev_april_corgi//:tsconfig",
+        tsconfig = "//:tsconfig",
         **kwargs
     )
 

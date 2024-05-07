@@ -1,4 +1,4 @@
-import * as corgi from 'js/corgi';
+import * as corgi from '../corgi';
 
 import { CheckboxController, State } from './checkbox_controller';
 

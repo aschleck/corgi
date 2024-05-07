@@ -1,8 +1,8 @@
-import { waitSettled, waitTicks } from 'js/common/promises';
-import * as corgi from 'js/corgi';
-import { Binder } from 'js/corgi/binder';
-import { Controller, Response } from 'js/corgi/controller';
-import { EmptyDeps } from 'js/corgi/deps';
+import { waitSettled, waitTicks } from '../common/promises';
+import * as corgi from '../corgi';
+import { Binder } from '../corgi/binder';
+import { Controller, Response } from '../corgi/controller';
+import { EmptyDeps } from '../corgi/deps';
 
 afterEach(() => {
   document.body.innerHTML = '';
