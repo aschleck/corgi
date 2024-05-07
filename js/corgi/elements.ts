@@ -4,14 +4,23 @@ declare global {
   namespace JSX {
     interface IntrinsicElements {
       a: AnchorProperties;
+      article: Properties;
       aside: Properties;
       button: Properties;
       canvas: Properties;
+      code: Properties;
       circle: CircleProperties;
       details: Properties;
       div: Properties;
       footer: Properties;
       g: GroupProperties;
+      h1: Properties;
+      h2: Properties;
+      h3: Properties;
+      h4: Properties;
+      h5: Properties;
+      h6: Properties;
+      hr: Properties;
       header: Properties;
       i: Properties;
       img: ImageProperties;
@@ -20,6 +29,7 @@ declare global {
       li: Properties;
       line: LineProperties;
       main: Properties;
+      nav: Properties;
       option: OptionProperties;
       p: Properties;
       path: PathProperties;
@@ -35,6 +45,7 @@ declare global {
       text: TextProperties;
       th: Properties;
       thead: Properties;
+      time: Properties;
       tr: Properties;
       ul: Properties;
     }
