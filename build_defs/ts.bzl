@@ -18,13 +18,13 @@ def esbuild_binary(
         bazel_sandbox_plugin = False,
         config = ":" + name + "/esbuild.config.mjs",
         entry_point = entry_point,
-        tsconfig = "//:tsconfig",
+        tsconfig = "@dev_april_corgi//:tsconfig",
         srcs = [
             entry_point,
         ],
         deps = (css_deps or []) + (deps or []) + [
             ":" + name + "_esbuild_config",
-            "//third_party/deanc-esbuild-plugin-postcss",
+            "@dev_april_corgi//third_party/deanc-esbuild-plugin-postcss",
         ],
         minify = minify,
         output_css = "%s.css" % name if has_css else None,
@@ -40,7 +40,7 @@ def esbuild_binary(
             "tailwind.theme.mjs",
         ],
         deps = [
-            "//third_party/deanc-esbuild-plugin-postcss",
+            "@dev_april_corgi//third_party/deanc-esbuild-plugin-postcss",
         ],
     )
 
@@ -55,10 +55,10 @@ def esbuild_binary(
         name = name + "_esbuild_config_copy",
         srcs = [
             "tailwind.theme.mjs",
-            "//build_defs:esbuild.config.mjs",
-            "//build_defs:postcss.config.mjs",
-            "//build_defs:tailwind.config.mjs",
-            "//third_party/deanc-esbuild-plugin-postcss:index.js",
+            "@dev_april_corgi//build_defs:esbuild.config.mjs",
+            "@dev_april_corgi//build_defs:postcss.config.mjs",
+            "@dev_april_corgi//build_defs:tailwind.config.mjs",
+            "@dev_april_corgi//third_party/deanc-esbuild-plugin-postcss:index.js",
         ],
         outs = [
             name + "/esbuild.config.mjs",
@@ -102,15 +102,15 @@ def c_ts_project(name, srcs = None, css_deps = None, data = None, deps = None):
         srcs = native.glob(["*.test.ts", "*.test.tsx"]),
         deps = [
             ":%s" % name,
-            "//:node_modules/@types/jest",
-            "//:node_modules/jest-environment-jsdom",
+            "@dev_april_corgi//:node_modules/@types/jest",
+            "@dev_april_corgi//:node_modules/jest-environment-jsdom",
         ],
     )
 
     jest_test(
         name = "jest",
-        config = "//build_defs:jest_config",
-        node_modules = "//:node_modules",
+        config = "@dev_april_corgi//build_defs:jest_config",
+        node_modules = "@dev_april_corgi//:node_modules",
         data = [
             ":tests",
         ],
@@ -125,7 +125,7 @@ def ts_project(name, srcs, deps = None, **kwargs):
         deps = deps or [],
         srcs = srcs,
         transpiler = "tsc",
-        tsconfig = "//:tsconfig",
+        tsconfig = "@dev_april_corgi//:tsconfig",
         **kwargs
     )
 
