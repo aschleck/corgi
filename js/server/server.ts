@@ -8,7 +8,7 @@ import { deepEqual } from '../common/comparisons';
 import { Fragment, Properties, VElementOrPrimitive } from '../corgi';
 import { ElementFactory } from '../corgi/vdom';
 
-import { InitialDataKey } from './data';
+import { InitialDataKey } from './ssr_aware';
 
 declare module '@fastify/request-context' {
   interface RequestContextData {

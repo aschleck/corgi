@@ -4,45 +4,9 @@ import { maybeMemoized } from '../common/memoized';
 import { fetchGlobalDeps } from '../corgi/deps';
 import { HistoryService } from '../corgi/history/history_service';
 
-import { InitialDataKey } from './data';
-
-export type UnitSystem = 'imperial'|'metric';
-
-const UNIT_SYSTEM_COOKIE = 'unit_system';
-
-function calculateUnitSystem(): UnitSystem {
-  const requested =
-      (window.SERVER_SIDE_RENDER?.cookies() ?? window.document?.cookie)
-          ?.split('; ')
-          ?.find(c => c.startsWith(`${UNIT_SYSTEM_COOKIE}=`))
-          ?.split('=')[1];
-  if (requested === 'imperial' || requested === 'metric') {
-    return requested;
-  }
-
-  const imperial = getLanguage() === 'en-LR' || getLanguage() === 'en-US' || getLanguage() === 'my';
-  return imperial ? 'imperial' : 'metric';
+export interface InitialDataKey {
+  type: string;
 }
-
-const chosenUnitSystem = maybeMemoized(calculateUnitSystem);
-
-export function getUnitSystem(): UnitSystem {
-  return chosenUnitSystem.value;
-}
-
-export function setUnitSystem(system: UnitSystem) {
-  chosenUnitSystem.value = system;
-
-  let secure;
-  if (debugMode()) {
-    secure = '';
-  } else {
-    secure =  '; Secure';
-  }
-
-  document.cookie = `${UNIT_SYSTEM_COOKIE}=${system}; Path=/; SameSite=Strict${secure}`;
-}
-
 
 declare global {
   interface Window {
