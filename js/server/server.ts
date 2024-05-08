@@ -59,7 +59,8 @@ type PageFn = (content: string, title: string, escapedData: string) => string;
 export async function serve(
         app: ElementFactory,
         page: PageFn,
-        {defaultTitle, initialize, port}: {
+        {dataServer, defaultTitle, initialize, port}: {
+          dataServer?: string;
           defaultTitle: string;
           initialize?: (f: FastifyInstance) => Promise<void>,
           port: number;
@@ -95,17 +96,21 @@ export async function serve(
 
     let responseData: unknown[];
     if (requestedData.length > 0) {
-      const response = await fetch('http://127.0.0.1:7070/api/data', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'If-None-Match': request.headers['if-none-match'] ?? '',
-          'X-User-ID': request.userId,
-        },
-        body: JSON.stringify({
-          keys: requestedData,
-        }),
-      });
+      const host =
+          dataServer === 'self'
+              ? `${server.listeningOrigin}/api/data`
+              : (dataServer ?? 'http://127.0.0.1:7070/api/data');
+      const response = await fetch(host, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'If-None-Match': request.headers['if-none-match'] ?? '',
+            'X-User-ID': request.userId,
+          },
+          body: JSON.stringify({
+            keys: requestedData,
+          }),
+        });
 
       if (!response.ok) {
         reply.type('text/plain').code(response.status);
