@@ -52,6 +52,7 @@ export function fetchDataBatch<T extends string[]>(tuples: KeyedTuples<T>):
     return fetch('/api/data', {
       method: 'POST',
       body: JSON.stringify({keys: missing}),
+      headers: {'Content-Type': 'application/json'},
     })
         .then(response => response.json())
         .then(response => {
