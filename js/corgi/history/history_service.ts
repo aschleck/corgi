@@ -17,7 +17,7 @@ export class HistoryService extends Service<EmptyDeps> {
     super(response);
     this.listeners = new Set();
 
-    window.addEventListener('click', (e: Event) => {
+    window.addEventListener('click', (e: MouseEvent) => {
       let cursor: Element|null = e.target as Element;
       while (cursor && cursor.tagName !== 'A') {
         cursor = cursor.parentElement;
@@ -25,7 +25,7 @@ export class HistoryService extends Service<EmptyDeps> {
       if (cursor) {
         const href = cursor.getAttribute('href');
         const target = cursor.getAttribute('target');
-        if (href && href.startsWith('/') && target !== '_blank') {
+        if (href && href.startsWith('/') && target !== '_blank' && !e.metaKey && !e.ctrlKey) {
           e.preventDefault();
           this.goTo(href);
         }
