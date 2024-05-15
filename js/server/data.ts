@@ -1,29 +1,21 @@
 import { deepEqual } from '../common/comparisons';
+import { Future, resolvedFuture } from '../common/futures';
 
-import { initialData } from './ssr_aware';
+import { DataKey, fetchDataBatch as ssrFetchDataBatch, initialData, isServerSide } from './ssr_aware';
 
 type AsObjects<T extends string[]> = {[K in keyof T]: object};
 type KeyedTuples<T extends string[]> = {[K in keyof T]: [T[K], object]};
 
-const MAX_CACHE_ENTRIES = 10;
-const cache: Array<[object, object]> = [];
+const MAX_CACHE_ENTRIES = isServerSide() ? 0 : 10;
+const cache: Array<[object, object]> = initialData();
 
 export function fetchDataBatch<T extends string[]>(tuples: KeyedTuples<T>):
-    Promise<AsObjects<T>> {
-  const missing: object[] = [];
+    Future<AsObjects<T>> {
+  const missing: DataKey[] = [];
   const missingIndices: number[] = [];
   const data: object[] = [];
   for (let i = 0; i < tuples.length; ++i) {
     const [type, request] = tuples[i];
-    const initial = initialData({
-      ...request,
-      type,
-    });
-    if (initial) {
-      data[i] = initial;
-      continue;
-    }
-
     const withType = {...request, type};
 
     let cached = -1;
@@ -47,17 +39,12 @@ export function fetchDataBatch<T extends string[]>(tuples: KeyedTuples<T>):
   }
 
   if (missing.length === 0) {
-    return Promise.resolve(data as AsObjects<T>);
+    return resolvedFuture(data as AsObjects<T>);
   } else {
-    return fetch('/api/data', {
-      method: 'POST',
-      body: JSON.stringify({keys: missing}),
-      headers: {'Content-Type': 'application/json'},
-    })
-        .then(response => response.json())
+    return ssrFetchDataBatch(missing)
         .then(response => {
-          for (let i = 0; i < response.values.length; ++i) {
-            const value = response.values[i];
+          for (let i = 0; i < response.length; ++i) {
+            const value = response[i];
             data[missingIndices[i]] = value;
             cache.push([missing[i], value]);
           }

@@ -5,15 +5,16 @@ import { fastifyRequestContextPlugin, requestContext } from '@fastify/request-co
 
 import { checkExists } from '../common/asserts';
 import { deepEqual } from '../common/comparisons';
-import { Fragment, Properties, VElementOrPrimitive } from '../corgi';
+import { Future, resolvedFuture, unsettledFuture } from '../common/futures';
+import { Fragment, Properties, VElementOrPrimitive, vdomCaching } from '../corgi';
 import { ElementFactory } from '../corgi/vdom';
 
-import { InitialDataKey } from './ssr_aware';
+import { DataKey } from './ssr_aware';
 
 declare module '@fastify/request-context' {
   interface RequestContextData {
     cookies: string|undefined;
-    initialData: (key: InitialDataKey) => undefined|unknown;
+    fetchDataBatch: (keys: DataKey[]) => Future<object[]>;
     language: string|undefined;
     redirectTo: string;
     title: string;
@@ -35,8 +36,8 @@ global.window = {
     currentUrl: function() {
       return requestContext.get('url');
     },
-    initialData: (key: InitialDataKey) => {
-      return checkExists(requestContext.get('initialData'))(key);
+    fetchDataBatch: (keys: DataKey[]) => {
+      return checkExists(requestContext.get('fetchDataBatch'))(keys);
     },
     language: function() {
       return requestContext.get('language');
@@ -55,6 +56,8 @@ global.window = {
 } as any;
 
 type PageFn = (content: string, title: string, escapedData: string) => string;
+
+vdomCaching.disable();
 
 export async function serve(
         app: ElementFactory,
@@ -86,51 +89,76 @@ export async function serve(
             .split(',')[0]);
     requestContext.set('url', `https://trailcatalog.org${request.url}`);
 
-    // First we run a tracing path to discover what data we need
-    const requestedData: InitialDataKey[] = [];
-    requestContext.set('initialData', (key: InitialDataKey) => {
-      requestedData.push(key);
-      return undefined;
-    });
-    app({}, undefined, () => {});
+    const requestedData: Array<[DataKey, object]> = [];
+    const missingData: DataKey[] = [];
+    requestContext.set('fetchDataBatch', (keys: DataKey[]) => {
+      const values = [];
+      for (const key of keys) {
+        let found = false;
+        for (const [candidate, value] of requestedData) {
+          if (deepEqual(key, candidate)) {
+            found = true;
+            values.push(value);
+            break;
+          }
+        }
 
-    let responseData: unknown[];
-    if (requestedData.length > 0) {
-      const host =
-          dataServer === 'self'
-              ? `${server.listeningOrigin}/api/data`
-              : (dataServer ?? 'http://127.0.0.1:7070/api/data');
-      const response = await fetch(host, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'If-None-Match': request.headers['if-none-match'] ?? '',
-            'X-User-ID': request.userId,
-          },
-          body: JSON.stringify({
-            keys: requestedData,
-          }),
-        });
-
-      if (!response.ok) {
-        reply.type('text/plain').code(response.status);
-        reply.send(response.statusText);
-      }
-
-      responseData = (await response.json() as {values: unknown[]}).values;
-    } else {
-      responseData = [];
-    }
-
-    // Finally we re-render with our data
-    requestContext.set('initialData', (key: InitialDataKey) => {
-      for (let i = 0; i < requestedData.length; ++i) {
-        if (deepEqual(key, requestedData[i])) {
-          return responseData[i];
+        if (!found) {
+          missingData.push(key);
         }
       }
-      return undefined;
+
+      if (keys.length === values.length) {
+        return resolvedFuture(values);
+      } else {
+        return unsettledFuture();
+      }
     });
+
+    // We re-run the render over and over again until new data stops being fetched. At least we cap
+    // it to 10 renders.
+    let renderAttempts = 10;
+    for ( ; renderAttempts > 0; renderAttempts--) {
+      app({}, undefined, () => {});
+      await Promise.resolve(); // wait 1 tick for the fetches to resolve
+
+      if (missingData.length > 0) {
+        const host =
+            dataServer === 'self'
+                ? `${server.listeningOrigin}/api/data`
+                : (dataServer ?? 'http://127.0.0.1:7070/api/data');
+        const response = await fetch(host, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'If-None-Match': request.headers['if-none-match'] ?? '',
+              'X-User-ID': request.userId,
+            },
+            body: JSON.stringify({
+              keys: missingData,
+            }),
+          });
+
+        if (!response.ok) {
+          reply.type('text/plain').code(response.status);
+          reply.send(response.statusText);
+        }
+
+        const responseData = (await response.json() as {values: object[]}).values;
+        for (let i = 0; i < missingData.length; ++i) {
+          requestedData.push([missingData[i], responseData[i]]);
+        }
+        missingData.length = 0;
+      } else {
+        break;
+      }
+    }
+
+    if (renderAttempts === 0) {
+      throw new Error('Server-side render did not converge');
+    }
+
+    // The last render was good, so just do it again
     const content = app({}, undefined, () => {});
 
     const redirectUrl = requestContext.get('redirectTo');
@@ -140,11 +168,7 @@ export async function serve(
 
     reply.type('text/html').code(200);
 
-    const data = {
-      keys: requestedData,
-      values: responseData,
-    };
-    const escapedData = JSON.stringify(data).replace(/\//g, '\\/');
+    const escapedData = JSON.stringify(requestedData).replace(/\//g, '\\/');
     const result =
         page(
             render(content),

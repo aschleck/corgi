@@ -1968,7 +1968,7 @@
     },
     "@@aspect_bazel_lib~//lib:extensions.bzl%toolchains": {
       "general": {
-        "bzlTransitiveDigest": "O9/AM1Dulxk7A4ao63CTGHeaVqPmibinbOMLVCQRM88=",
+        "bzlTransitiveDigest": "lPDe2ANVRGpGRPXjgaHCmalYWsfp4DqT/VZ6pFriAYQ=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -2344,7 +2344,7 @@
     },
     "@@aspect_rules_esbuild~//esbuild:extensions.bzl%esbuild": {
       "general": {
-        "bzlTransitiveDigest": "Yh9pqKSUhwckZ8K3TLGcXi+J7X8IBdS3XpqcAVx26Zw=",
+        "bzlTransitiveDigest": "5ZFUPq+n6/3TNb0JAAxR0rXVj3gZuiI6eiqQYjIMO+g=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -2495,7 +2495,7 @@
     },
     "@@aspect_rules_js~//npm:extensions.bzl%npm%<root>~npm": {
       "general": {
-        "bzlTransitiveDigest": "yt6Vzt6ZnzmvTeTyQV5gXGeMP/AiGz8in3z8xqve1J8=",
+        "bzlTransitiveDigest": "TkqT7dyTmaxzrmGoqPVzt85jYoquso4v3Thp0GOxsh0=",
         "recordedFileInputs": {
           "@@//pnpm-lock.yaml": "a28f9746d2a36870397893b239e9ad0d7a134d12e2601b170f17e8c86f4899dd",
           "@@aspect_bazel_lib~~toolchains~yq_darwin_arm64//yq": "db8c11ca4c1dda8fe7c211e82e28191d48bd9ae83471b952003e819de79bcb51"
@@ -45450,7 +45450,7 @@
     },
     "@@aspect_rules_ts~//ts:extensions.bzl%ext%<root>~rules_ts_ext": {
       "general": {
-        "bzlTransitiveDigest": "uRPYBpph5HeK1kmZoSoKToQr9xkH16aE2U2zUJORxTU=",
+        "bzlTransitiveDigest": "EELzrvIGWqarwBPWI83+zs4utDNNmZxg8YNdDKH36To=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -45573,7 +45573,7 @@
     },
     "@@rules_buf~//buf:extensions.bzl%ext": {
       "general": {
-        "bzlTransitiveDigest": "g+jMGdq+n4/yJrpHH5E0NFOhJJ1qUGT36b/kwcBonsU=",
+        "bzlTransitiveDigest": "NQ6Q24l4iPh6qgIwSVIFCofgF32NX8nMR8ht1WUY9HA=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -45597,7 +45597,7 @@
     },
     "@@rules_go~//go:extensions.bzl%go_sdk": {
       "general": {
-        "bzlTransitiveDigest": "k4MEsADgBfRC+sbMqB3lZL0JpdsCxlwSYO+z9zn9Y80=",
+        "bzlTransitiveDigest": "iUTnM/5xPY1pjD8W+6jcwwTaWS8KEn/M6OE29jsteB0=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -45651,7 +45651,7 @@
     },
     "@@rules_java~//java:extensions.bzl%toolchains": {
       "general": {
-        "bzlTransitiveDigest": "tJHbmWnq7m+9eUBnUdv7jZziQ26FmcGL9C5/hU3Q9UQ=",
+        "bzlTransitiveDigest": "0N5b5J9fUzo0sgvH4F3kIEaeXunz4Wy2/UtSFV/eXUY=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},

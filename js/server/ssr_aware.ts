@@ -1,23 +1,21 @@
 import { deepEqual } from '../common/comparisons';
 import { debugMode } from '../common/debug';
+import { Future, asFuture } from '../common/futures';
 import { maybeMemoized } from '../common/memoized';
 import { fetchGlobalDeps } from '../corgi/deps';
 import { HistoryService } from '../corgi/history/history_service';
 
-export interface InitialDataKey {
+export interface DataKey {
   type: string;
 }
 
 declare global {
   interface Window {
-    INITIAL_DATA?: {
-      keys: object[];
-      values: object[];
-    };
+    INITIAL_DATA?: Array<[key: DataKey, value: object]>;
     SERVER_SIDE_RENDER?: {
       cookies(): string;
       currentUrl(): string;
-      initialData<K extends InitialDataKey>(key: K): object|undefined;
+      fetchDataBatch(keys: DataKey[]): Future<object[]>;
       language(): string;
       redirectTo(url: string): void;
       setTitle(title: string): void;
@@ -38,17 +36,23 @@ export function currentUrl(): URL {
   return new URL(window.SERVER_SIDE_RENDER?.currentUrl() ?? window.location.href);
 }
 
-export function initialData<K extends InitialDataKey>(key: K): object|undefined {
+export function fetchDataBatch(keys: DataKey[]): Future<object[]> {
   if (window.SERVER_SIDE_RENDER) {
-    return window.SERVER_SIDE_RENDER.initialData(key);
-  } else if (window.INITIAL_DATA) {
-    for (let i = 0; i < window.INITIAL_DATA.keys.length; ++i) {
-      if (deepEqual(key, window.INITIAL_DATA.keys[i])) {
-        return window.INITIAL_DATA.values[i];
-      }
-    }
+    return window.SERVER_SIDE_RENDER.fetchDataBatch(keys);
+  } else {
+    const p = fetch('/api/data', {
+      method: 'POST',
+      body: JSON.stringify({keys}),
+      headers: {'Content-Type': 'application/json'},
+    })
+        .then(response => response.json())
+        .then(response => response.values);
+    return asFuture(p);
   }
-  return undefined;
+}
+
+export function initialData(): Array<[key: DataKey, value: object]> {
+  return window.INITIAL_DATA ?? [];
 }
 
 export function isServerSide(): boolean {
