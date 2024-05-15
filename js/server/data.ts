@@ -16,21 +16,12 @@ export function fetchDataBatch<T extends string[]>(tuples: KeyedTuples<T>):
   const data: object[] = [];
   for (let i = 0; i < tuples.length; ++i) {
     const [type, request] = tuples[i];
+    // TODO(april): this is dumb just make the type {type, request} and don't merge. type can
+    // conflict.
     const withType = {...request, type};
-
-    let cached = -1;
-    for (let i = cache.length - 1; i >= 0; --i) {
-      if (deepEqual(cache[i][0], withType)) {
-        cached = i;
-        break;
-      }
-    }
-
-    if (cached >= 0) {
-      const entry = cache[cached];
-      data[i] = entry[1];
-      cache.splice(cached, 1);
-      cache.push(entry);
+    const cached = getCache(withType);
+    if (cached) {
+      data[i] = cached;
       continue;
     }
 
@@ -53,6 +44,25 @@ export function fetchDataBatch<T extends string[]>(tuples: KeyedTuples<T>):
           }
           return data as AsObjects<T>;
         });
+  }
+}
+
+export function getCache(request: DataKey): object|undefined {
+  let cached = -1;
+  for (let i = cache.length - 1; i >= 0; --i) {
+    if (deepEqual(cache[i][0], request)) {
+      cached = i;
+      break;
+    }
+  }
+
+  if (cached >= 0) {
+    const entry = cache[cached];
+    cache.splice(cached, 1);
+    cache.push(entry);
+    return entry[1];
+  } else {
+    return undefined;
   }
 }
 
