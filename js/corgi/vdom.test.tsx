@@ -35,9 +35,10 @@ test('adds wapper to dom', () => {
   expect(document.body.innerHTML).toBe('<div><div>hi!</div><span>bye!</span></div>');
 });
 
-test('adds true boolean attributes', () => {
+test('handles checked boolean attributes', () => {
   corgi.appendElement(document.body, <input type="checkbox" checked={true} />);
-  expect(document.body.innerHTML).toBe('<input type=\"checkbox\" checked=\"\">');
+  expect(document.body.innerHTML).toBe('<input type=\"checkbox\">');
+  expect(document.body.querySelector('input')?.checked).toBe(true);
 })
 
 test('skips false boolean attributes', () => {
@@ -51,7 +52,7 @@ test('adds class attributes', () => {
 });
 
 test('adds underscore attributes', () => {
-  corgi.appendElement(document.body, <text text_anchor="middle" />);
+  corgi.appendElement(document.body, <text textAnchor="middle" />);
   expect(document.body.innerHTML).toBe('<text text-anchor=\"middle\"></text>');
 });
 

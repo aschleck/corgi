@@ -114,6 +114,7 @@ def c_ts_project(name, srcs = None, css_deps = None, data = None, deps = None):
         node_modules = "//:node_modules",
         data = [
             ":tests",
+            "@dev_april_corgi//:tsconfig",
         ],
     )
 
