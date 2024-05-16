@@ -7,7 +7,7 @@ import { checkExists } from '../common/asserts';
 import { deepEqual } from '../common/comparisons';
 import { Future, resolvedFuture, unsettledFuture } from '../common/futures';
 import { Fragment, Properties, VElementOrPrimitive, vdomCaching } from '../corgi';
-import { ElementFactory } from '../corgi/vdom';
+import { ElementFactory, canonicalize } from '../corgi/vdom';
 
 import { DataKey } from './ssr_aware';
 
@@ -223,6 +223,13 @@ const ESCAPES = {
 function renderProperties(props: Properties): string {
   const attributes = [];
   for (const [key, value] of Object.entries(props)) {
+    if (key === 'data') {
+      for (const [k, v] of Object.entries(value)) {
+        attributes.push(...renderAttribute(canonicalize(`data-${k}`), v));
+      }
+      continue;
+    }
+
     let actualKey;
     let actualValue = value;
     if (key === 'className') {
@@ -241,31 +248,30 @@ function renderProperties(props: Properties): string {
       actualKey = key.replace('_', '-');
     }
 
-    if (actualValue !== undefined) {
-      let rendered;
-      if (typeof actualValue === 'string') {
-        const escapedValue = [];
-        for (const c of actualValue) {
-          if (c in ESCAPES) {
-            escapedValue.push(ESCAPES[c as keyof typeof ESCAPES]);
-          } else {
-            escapedValue.push(c);
-          }
-        }
-        rendered = escapedValue.join('');
-      } else if (typeof actualValue === 'boolean') {
-        if (actualValue) {
-          attributes.push(actualKey);
-        }
-        continue;
-      } else {
-        rendered = actualValue;
-      }
-
-      attributes.push(`${actualKey}="${rendered}"`);
-    }
+    attributes.push(...renderAttribute(actualKey, actualValue));
   }
   return attributes.join(' ');
+}
+
+function renderAttribute(key: string, value: boolean|number|string|undefined|unknown): string[] {
+  if (value === undefined) {
+    return [];
+  }
+
+  let rendered;
+  if (typeof value === 'string') {
+    rendered = renderText(value);
+  } else if (key === 'checked' && typeof value === 'boolean') {
+    if (value) {
+      return [key];
+    } else {
+      return [];
+    }
+  } else {
+    rendered = value;
+  }
+
+  return [`${key}="${rendered}"`];
 }
 
 function renderText(value: number|string): string {

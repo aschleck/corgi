@@ -56,6 +56,7 @@ export interface Properties {
   ariaLabel?: string;
   children?: unknown[],
   className?: string;
+  data?: {[key: string]: boolean|number|string};
   js?: AnyBoundController;
   style?: string; // TODO(april): this is sad
   tabIndex?: string;

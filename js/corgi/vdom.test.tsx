@@ -30,7 +30,12 @@ test('adds text to dom', () => {
   expect(document.body.innerHTML).toBe('hello world');
 });
 
-test('adds wapper to dom', () => {
+test('adds data to dom', () => {
+  corgi.appendElement(document.body, <div data={{hello: 1, goAwayNow: 2}}></div>);
+  expect(document.body.innerHTML).toBe('<div data-hello=\"1\" data-go-away-now=\"2\"></div>');
+});
+
+test('adds wrapper to dom', () => {
   corgi.appendElement(document.body, <WrapChildren><div>hi!</div><span>bye!</span></WrapChildren>);
   expect(document.body.innerHTML).toBe('<div><div>hi!</div><span>bye!</span></div>');
 });

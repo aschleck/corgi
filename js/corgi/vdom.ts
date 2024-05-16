@@ -537,6 +537,17 @@ function patchProperties(element: Element, from: AnyProperties, to: AnyPropertie
         } else {
           element.removeAttribute('class');
         }
+      } else if (key === 'data') {
+        const dataset = (element as HTMLElement).dataset;
+        for (const k of Object.keys(dataset)) {
+          delete dataset[k];
+        }
+
+        if (value) {
+          for (const [k, v] of Object.entries(value)) {
+            dataset[k] = v;
+          }
+        }
       } else if (key === 'value' && element instanceof HTMLInputElement) {
         if (value !== undefined) { // don't clear value if we are no longer forcing it
           element.value = String(value);
@@ -565,7 +576,14 @@ function patchProperties(element: Element, from: AnyProperties, to: AnyPropertie
   for (const key of oldPropKeys) {
     const canonical = canonicalize(key);
     if (!to.hasOwnProperty(key)) {
-      element.removeAttribute(key === 'className' ? 'class' : canonical);
+      if (key === 'data') {
+        const dataset = (element as HTMLElement).dataset ?? {};
+        for (const k of Object.keys(dataset)) {
+          delete dataset[k];
+        }
+      } else {
+        element.removeAttribute(key === 'className' ? 'class' : canonical);
+      }
     } else if (typeof to[key] === 'boolean' && !to[key]) {
       element.removeAttribute(canonical);
     }
@@ -574,7 +592,7 @@ function patchProperties(element: Element, from: AnyProperties, to: AnyPropertie
 
 let nextElementId = 0;
 
-function canonicalize(key: string): string {
+export function canonicalize(key: string): string {
   if (key === 'viewBox') {
     return key;
   } else {
