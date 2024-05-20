@@ -1,5 +1,30 @@
 export type SupportedElement = HTMLElement|SVGElement;
 
+export class Query {
+
+  constructor(private readonly frontier: SupportedElement[]) {
+  }
+
+  refs(ref: string): Query {
+    const found = this.frontier.flatMap(e =>
+        elementFinder(
+            e,
+            candidate => candidate.getAttribute('data-ref') === ref,
+            parent => !parent.hasAttribute('data-js')));
+    return new Query(found);
+  }
+
+  one(): SupportedElement {
+    if (this.frontier.length > 1) {
+      throw new Error('More than one element in query');
+    } else if (this.frontier.length === 0) {
+      throw new Error('No elements in query');
+    } else {
+      return this.frontier[0];
+    }
+  }
+}
+
 export function elementFinder(
     root: SupportedElement,
     filter: (element: Element) => boolean,
@@ -34,3 +59,4 @@ export function parentFinder(
   }
   return target ?? undefined;
 }
+

@@ -66,6 +66,17 @@ export function getCache(request: DataKey): object|undefined {
   }
 }
 
+export function invalidateCache(invalidator: (request: object, response: object) => boolean): void {
+  const cleansed: typeof cache = [];
+  for (const [request, response] of cache) {
+    if (!invalidator(request, response)) {
+      cleansed.push([request, response]);
+    }
+  }
+  cache.length = 0;
+  cache.push(...cleansed);
+}
+
 export function putCache(type: string, request: object, response: object) {
   cache.push([{type, ...request}, response]);
 }

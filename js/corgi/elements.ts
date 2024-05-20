@@ -6,12 +6,13 @@ declare global {
       a: AnchorProperties;
       article: Properties;
       aside: Properties;
-      button: Properties;
+      button: ButtonProperties;
       canvas: Properties;
       code: Properties;
       circle: CircleProperties;
       details: Properties;
       div: Properties;
+      form: Properties;
       footer: Properties;
       g: GroupProperties;
       h1: Properties;
@@ -67,6 +68,10 @@ export interface Properties {
 export interface AnchorProperties extends Properties {
   href?: string;
   target?: '_self'|'_blank'|'_parent'|'_top';
+}
+
+export interface ButtonProperties extends Properties {
+  type?: 'submit';
 }
 
 export interface GroupProperties extends Properties {}

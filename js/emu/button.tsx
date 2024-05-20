@@ -3,10 +3,8 @@ import * as corgi from '../corgi';
 import { ButtonController, State } from './button_controller';
 
 type ButtonProps = {
-  ariaLabel?: string,
   children?: corgi.VElementOrPrimitive[],
-  className?: string;
-} & corgi.Properties;
+} & corgi.ButtonProperties;
 
 export function Button(
     {ariaLabel, children, className, ...props}: ButtonProps,

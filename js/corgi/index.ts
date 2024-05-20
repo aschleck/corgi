@@ -1,5 +1,5 @@
 export { bind } from './binder';
-export type { InputProperties, Properties } from './elements';
+export type { ButtonProperties, InputProperties, Properties } from './elements';
 export { appendElement, createVirtualElement, Fragment, hydrateElement, vdomCaching } from './vdom';
 export type { VElementOrPrimitive } from './vdom';
 

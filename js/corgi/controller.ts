@@ -1,7 +1,7 @@
 import { Debouncer } from '../common/debouncer';
 import { Disposable } from '../common/disposable';
 
-import { SupportedElement } from './dom';
+import { Query, SupportedElement } from './dom';
 import { EventSpec, qualifiedName } from './events';
 import { ServiceDeps } from './service';
 import { DepsConstructed, DepsConstructorsFor } from './types';
@@ -54,6 +54,10 @@ export class Controller<
   }
 
   updateArgs(newArgs: A): void {}
+
+  protected query(): Query {
+    return new Query([this.root]);
+  }
 
   protected trigger<D>(spec: EventSpec<D>, detail: D): void {
     this.root.dispatchEvent(new CustomEvent(qualifiedName(spec), {
