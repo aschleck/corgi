@@ -3,7 +3,7 @@ import { deepEqual } from '../common/comparisons';
 import { Disposable } from '../common/disposable';
 
 import { Controller, ControllerCtor, ControllerDeps, ControllerDepsMethod, Response as ControllerResponse } from './controller';
-import { elementFinder, parentFinder, SupportedElement } from './dom';
+import { elementFinder, parentFinder, QueryOne, SupportedElement } from './dom';
 import { Properties } from './elements';
 import { EventSpec, qualifiedName } from './events';
 import { isAnchorContextClick } from './mouse';
@@ -318,7 +318,11 @@ function bindEventListener(
     maybeInstantiateAndCall(root, spec, (controller: any) => {
       const method = controller[handler] as (e: any) => unknown;
       checkExists(method, `Cannot find method ${handler} on ${controller.constructor.name}`)
-          .call(controller, e);
+          .call(controller, {
+            actionElement: new QueryOne(element),
+            targetElement: new QueryOne(e.target as SupportedElement),
+            detail: 'detail' in e ? e.detail : {},
+          });
     });
   };
   disposer.registerListener(element, event as any, invoker);
