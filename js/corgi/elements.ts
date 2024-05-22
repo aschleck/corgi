@@ -42,7 +42,7 @@ declare global {
       svg: SVGProperties;
       table: Properties;
       tbody: Properties;
-      td: Properties;
+      td: TdProperties;
       text: TextProperties;
       th: Properties;
       thead: Properties;
@@ -93,6 +93,10 @@ export interface InputProperties extends Properties {
 
 export interface OptionProperties extends Properties {
   value?: string;
+}
+
+export interface TdProperties extends Properties {
+  colspan?: string;
 }
 
 export interface SVGGraphicsProperties extends Properties {
