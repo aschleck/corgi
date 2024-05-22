@@ -7,12 +7,13 @@ type InputProps = {
   forceValue?: boolean,
   icon?: corgi.VElementOrPrimitive,
   inset?: corgi.VElementOrPrimitive,
+  name?: string,
   placeholder?: string,
   ref?: string,
 } & corgi.InputProperties;
 
 export function Input(
-    {className, forceValue, icon, inset, placeholder, ref, value, ...props}: InputProps,
+    {className, forceValue, icon, inset, name, placeholder, ref, value, ...props}: InputProps,
     state: State|undefined,
     updateState: (newState: State) => void) {
   if (!state) {
@@ -39,6 +40,7 @@ export function Input(
             state: [state, updateState],
           })}
           className="bg-transparent grow outline-none placeholder-current"
+          name={name}
           placeholder={placeholder ?? ''}
           value={forceValue || state.managed ? value : undefined}
       />
