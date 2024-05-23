@@ -19,7 +19,7 @@ export class SelectController extends Controller<Args, EmptyDeps, HTMLSelectElem
     return this.root.value;
   }
 
-  changed(e: Event): void {
+  changed(e: CorgiEvent<unknown>): void {
     this.trigger(CHANGED, {value: this.value});
   }
 }

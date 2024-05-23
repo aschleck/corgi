@@ -1,6 +1,6 @@
 import { Controller, Response } from '../corgi/controller';
 import { EmptyDeps } from '../corgi/deps';
-import { CorgiEvent } from '../corgi/events';
+import { CorgiEvent, DOM_KEYBOARD } from '../corgi/events';
 
 import { ACTION } from './events';
 
@@ -25,8 +25,8 @@ export class CheckboxController extends Controller<Args, EmptyDeps, HTMLInputEle
     this.trigger(ACTION, {});
   }
 
-  keyPressed(e: KeyboardEvent): void {
-    if (e.key === 'Enter' || e.key === ' ') {
+  keyPressed(e: CorgiEvent<typeof DOM_KEYBOARD>): void {
+    if (e.detail.key === 'Enter' || e.detail.key === ' ') {
       this.updateState({
         ...this.state,
         checked: !this.state.checked,

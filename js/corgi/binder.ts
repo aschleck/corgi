@@ -18,12 +18,16 @@ type IsMethodWithParameters<T, K extends keyof T, P extends unknown[]> = HasPara
 type AMethodOnWithParameters<T, P extends unknown[]> = keyof {[K in keyof T as IsMethodWithParameters<T, K, P>]: 'valid'};
 
 interface PropertyKeyToHandlerMap<C> {
+  blur: AMethodOnWithParameters<C, [CustomEvent<FocusEvent>]>;
   change: AMethodOnWithParameters<C, [CustomEvent<Event>]>;
   click: AMethodOnWithParameters<C, [CustomEvent<MouseEvent>]>;
   corgi: Array<[
     EventSpec<unknown>,
     AMethodOnWithParameters<C, [CustomEvent<unknown>]>,
   ]>;
+  focus: AMethodOnWithParameters<C, [CustomEvent<FocusEvent>]>;
+  focusin: AMethodOnWithParameters<C, [CustomEvent<FocusEvent>]>;
+  focusout: AMethodOnWithParameters<C, [CustomEvent<FocusEvent>]>;
   keydown: AMethodOnWithParameters<C, [CustomEvent<KeyboardEvent>]>;
   keyup: AMethodOnWithParameters<C, [CustomEvent<KeyboardEvent>]>;
   // This is wrong, it could also just be Event, but also I don't care
@@ -321,7 +325,7 @@ function bindEventListener(
           .call(controller, {
             actionElement: new QueryOne(element),
             targetElement: new QueryOne(e.target as SupportedElement),
-            detail: 'detail' in e ? e.detail : {},
+            detail: e instanceof CustomEvent && 'detail' in e ? e.detail : e,
           });
     });
   };

@@ -14,6 +14,9 @@ export function Button(
     state = {};
   }
 
+  // TODO(april): I think this is wrapped in a label so we can put unboundEvents on it without
+  // having them sent to the ButtonController. But this really messes up padding classes. How to
+  // fix?
   return <>
     <label className={'inline-block' + (className ? ` ${className}` : '')} {...props}>
       <button
@@ -21,12 +24,14 @@ export function Button(
             controller: ButtonController,
             events: {
               'click': 'clicked',
+              'focusin': 'focused',
+              'focusout': 'unfocused',
               'keyup': 'keyPressed',
             },
             state: [state, updateState],
           })}
           ariaLabel={ariaLabel}
-          className={'h-full w-full'}
+          className={'h-full [text-align:inherit] w-full'}
       >
         {children}
       </button>
@@ -49,6 +54,8 @@ export function Link(
             controller: ButtonController,
             events: {
               'click': 'clicked',
+              'focusin': 'focused',
+              'focusout': 'unfocused',
               'keyup': 'keyPressed',
             },
             state: [state, updateState],

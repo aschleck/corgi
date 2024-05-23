@@ -1,8 +1,8 @@
 import { Controller, Response } from '../corgi/controller';
 import { EmptyDeps } from '../corgi/deps';
-import { CorgiEvent } from '../corgi/events';
+import { CorgiEvent, DOM_KEYBOARD } from '../corgi/events';
 
-import { ACTION, CHANGED } from './events';
+import { ACTION, CHANGED, FOCUSED, UNFOCUSED } from './events';
 
 interface Args {
   value: string|undefined;
@@ -31,8 +31,16 @@ export class InputController extends Controller<Args, EmptyDeps, HTMLInputElemen
     return this.root.value;
   }
 
-  keyPressed(e: KeyboardEvent): void {
-    if (e.key === 'Enter') {
+  focused(): void {
+    this.trigger(FOCUSED, {});
+  }
+
+  unfocused(): void {
+    this.trigger(UNFOCUSED, {});
+  }
+
+  keyPressed(e: CorgiEvent<typeof DOM_KEYBOARD>): void {
+    if (e.detail.key === 'Enter') {
       this.trigger(ACTION, {});
     } else if (this.lastValue !== this.value) {
       this.lastValue = this.value;

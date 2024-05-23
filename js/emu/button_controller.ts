@@ -1,8 +1,8 @@
 import { Controller, Response } from '../corgi/controller';
 import { EmptyDeps } from '../corgi/deps';
-import { CorgiEvent } from '../corgi/events';
+import { CorgiEvent, DOM_KEYBOARD } from '../corgi/events';
 
-import { ACTION } from './events';
+import { ACTION, FOCUSED, UNFOCUSED } from './events';
 
 interface Args {
 }
@@ -20,8 +20,16 @@ export class ButtonController extends Controller<Args, EmptyDeps, HTMLElement, S
     this.trigger(ACTION, {});
   }
 
-  keyPressed(e: KeyboardEvent): void {
-    if (e.key === 'Enter' || e.key === ' ') {
+  focused(): void {
+    this.trigger(FOCUSED, {});
+  }
+
+  unfocused(): void {
+    this.trigger(UNFOCUSED, {});
+  }
+
+  keyPressed(e: CorgiEvent<typeof DOM_KEYBOARD>): void {
+    if (e.detail.key === 'Enter' || e.detail.key === ' ') {
       this.trigger(ACTION, {});
     }
   }

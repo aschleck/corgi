@@ -22,10 +22,7 @@ export function Input(
 
   return <>
     <label
-        className={
-            'flex font-input gap-3 items-center'
-                + (className ? ` ${className} ` : '')
-        }
+        className={className}
         {...props}
     >
       {icon ?? ''}
@@ -34,12 +31,14 @@ export function Input(
             controller: InputController,
             args: {value},
             events: {
+              'focusin': 'focused',
+              'focusout': 'unfocused',
               'keyup': 'keyPressed',
             },
             ref,
             state: [state, updateState],
           })}
-          className="bg-transparent grow outline-none placeholder-current"
+          className="bg-transparent outline-none placeholder-current w-full"
           name={name}
           placeholder={placeholder ?? ''}
           value={forceValue || state.managed ? value : undefined}
