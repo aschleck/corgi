@@ -22,7 +22,10 @@ export function Input(
 
   return <>
     <label
-        className={className}
+        className={
+            'flex font-input gap-3 items-center'
+                + (className ? ` ${className} ` : '')
+        }
         {...props}
     >
       {icon ?? ''}
@@ -38,7 +41,7 @@ export function Input(
             ref,
             state: [state, updateState],
           })}
-          className="bg-transparent outline-none placeholder-current w-full"
+          className="bg-transparent grow max-w-full outline-none placeholder-current"
           name={name}
           placeholder={placeholder ?? ''}
           value={forceValue || state.managed ? value : undefined}
