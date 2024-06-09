@@ -13,17 +13,17 @@ export interface Future<T> extends Promise<T> {
 export function asFuture<T>(p: Promise<T>): Future<T> {
   const f = new Promise((resolve, reject) => {
     p.then(v => {
+      f.finished = true;
       f.ok = true;
       f.value = () => v;
       resolve(v);
     }).catch(e => {
+      f.finished = true;
       f.ok = false;
       f.value = () => {
         throw e;
       };
       reject(e);
-    }).finally(() => {
-      f.finished = true;
     });
   }) as Future<T>;
 
