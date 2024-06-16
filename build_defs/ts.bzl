@@ -98,25 +98,26 @@ def c_ts_project(name, srcs = None, css_deps = None, data = None, deps = None):
             deps = css_deps or [],
         )
 
-    ts_project(
-        name = "tests",
-        srcs = native.glob(["*.test.ts", "*.test.tsx"]),
-        deps = [
-            ":%s" % name,
-            "//:node_modules/@types/jest",
-            "//:node_modules/jest-environment-jsdom",
-        ],
-    )
+    if native.glob(["*.test.ts", "*.test.tsx"]):
+        ts_project(
+            name = "tests",
+            srcs = native.glob(["*.test.ts", "*.test.tsx"]),
+            deps = [
+                ":%s" % name,
+                "//:node_modules/@types/jest",
+                "//:node_modules/jest-environment-jsdom",
+            ],
+        )
 
-    jest_test(
-        name = "jest",
-        config = "@dev_april_corgi//build_defs:jest_config",
-        node_modules = "//:node_modules",
-        data = [
-            ":tests",
-            "@dev_april_corgi//:tsconfig",
-        ],
-    )
+        jest_test(
+            name = "jest",
+            config = "@dev_april_corgi//build_defs:jest_config",
+            node_modules = "//:node_modules",
+            data = [
+                ":tests",
+                "@dev_april_corgi//:tsconfig",
+            ],
+        )
 
 def ts_project(name, srcs, deps = None, **kwargs):
     _ts_project(
