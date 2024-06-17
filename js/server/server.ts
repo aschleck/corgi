@@ -140,8 +140,7 @@ export async function serve(
           });
 
         if (!response.ok) {
-          reply.type('text/plain').code(response.status);
-          reply.send(response.statusText);
+          return reply.type('text/plain').code(response.status).send(response.statusText);
         }
 
         const responseData = (await response.json() as {values: object[]}).values;
@@ -163,10 +162,8 @@ export async function serve(
 
     const redirectUrl = requestContext.get('redirectTo');
     if (redirectUrl) {
-      reply.redirect(302, encodeURI(redirectUrl));
+      return reply.redirect(302, encodeURI(redirectUrl));
     }
-
-    reply.type('text/html').code(200);
 
     const escapedData = JSON.stringify(requestedData).replace(/\//g, '\\/');
     const result =
@@ -177,11 +174,11 @@ export async function serve(
 
     const ifNoneMatch = request.headers['if-none-match'];
     const etag = '"' + crypto.createHash('md5').update(result).digest('base64') + '"';
-    reply.header('ETag', etag);
+    reply.type('text/html').header('ETag', etag);
     if (ifNoneMatch === etag || ifNoneMatch === `W/${etag}`) {
       reply.code(304);
     } else {
-      reply.send(result);
+      reply.code(200).send(result);
     }
   });
 
