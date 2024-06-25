@@ -41,6 +41,8 @@ def esbuild_binary(
         ],
         deps = [
             "//:node_modules/autoprefixer",
+            "//:node_modules/postcss",
+            "//:node_modules/tailwindcss",
             "@dev_april_corgi//third_party/deanc-esbuild-plugin-postcss",
         ],
     )
