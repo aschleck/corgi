@@ -13,8 +13,5 @@ js_library(
     srcs = [
         "jest.config.js",
     ],
-    deps = [
-        "//:node_modules/ts-jest",
-    ],
 )
 

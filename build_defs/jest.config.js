@@ -2,8 +2,8 @@ require('process');
 
 /** @type {import('ts-jest').JestConfigWithTsJest} */
 module.exports = {
-  preset: 'ts-jest',
   testEnvironment: 'jsdom',
+  testMatch: ['**/?(*.)+(spec|test).js?(x)'],
   haste: {
     enableSymlinks: true,
   },
@@ -11,11 +11,4 @@ module.exports = {
     process.cwd(),
     'node_modules',
   ],
-  transform: {
-    '^.+\\.m?[tj]sx?$': [
-      'ts-jest', {
-        tsconfig: 'tsconfig.json',
-      },
-    ],
-  },
 };
