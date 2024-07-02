@@ -1,6 +1,5 @@
 import crypto from 'crypto';
 import fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import fetch from 'node-fetch';
 import { fastifyRequestContextPlugin, requestContext } from '@fastify/request-context';
 
 import { checkExists } from '../common/asserts';

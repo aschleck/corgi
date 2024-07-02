@@ -18,7 +18,6 @@ c_ts_project(
         "//:node_modules/@fastify/request-context",
         "//:node_modules/@types/node",
         "//:node_modules/fastify",
-        "//:node_modules/node-fetch",
         "//js/common",
         "//js/corgi",
     ],
