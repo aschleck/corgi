@@ -3,6 +3,8 @@ const postcss = require("postcss");
 const util = require("util");
 const path = require("path");
 
+const TMP_NAME = "postcss_temp";
+
 module.exports = (options = { plugins: [] }) => ({
   name: "postcss",
   setup: function (build) {
@@ -12,19 +14,43 @@ module.exports = (options = { plugins: [] }) => ({
         const sourceExt = path.extname(args.path);
         const sourceBaseName = path.basename(args.path, sourceExt);
         const sourceDir = path.dirname(args.path);
-        const sourceFullPath = path.resolve(args.resolveDir, args.path);
-        const tmpDir = path.resolve(process.cwd(), sourceDir);
+
+        // We take files from their source, run postcss over them, and then put them in TMP_NAME.
+        // When those files then import other files, the resolveDir includes TMP_NAME, so we need
+        // to remove it.
+        let resolveDir;
+        if (args.resolveDir.endsWith(`/${TMP_NAME}`)) {
+          resolveDir = path.resolve(args.resolveDir, '../')
+        } else {
+          resolveDir = args.resolveDir;
+        }
+        const tmpDir = path.resolve(process.cwd(), TMP_NAME, sourceDir);
         const tmpFilePath = path.resolve(tmpDir, `${sourceBaseName}.css`);
 
-        const css = await fs.readFile(sourceFullPath);
+        // Make tmpDir, if it doesn't already exist
+        try {
+          await fs.mkdir(tmpDir, {recursive: true});
+        } catch {
+          // It exists so that's fine
+        }
 
-        const result = await postcss(options.plugins).process(css, {
-          from: sourceFullPath,
-          to: tmpFilePath,
-        });
+        let errors = [];
+        for (const guess of [
+          path.resolve(resolveDir, args.path),
+          path.resolve(process.cwd(), "node_modules", args.path),
+        ]) {
+          try {
+            await run(guess, tmpFilePath, options);
+            errors.length = 0;
+            break;
+          } catch (e) {
+            errors.push(e);
+          }
+        }
 
-        // Write result file
-        await fs.writeFile(tmpFilePath, result.css);
+        if (errors.length > 0) {
+          throw errors[0];
+        }
 
         return {
           path: tmpFilePath,
@@ -33,3 +59,12 @@ module.exports = (options = { plugins: [] }) => ({
     );
   },
 });
+
+async function run(from, to, options) {
+  const css = await fs.readFile(from);
+  const result = await postcss(options.plugins).process(css, {
+    from,
+    to,
+  });
+  await fs.writeFile(to, result.css);
+}
