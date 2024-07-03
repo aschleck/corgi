@@ -2,6 +2,7 @@ load("@aspect_bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 load("@aspect_rules_jest//jest:defs.bzl", "jest_test")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@aspect_rules_js//js:providers.bzl", "JsInfo")
 load("@aspect_rules_ts//ts:defs.bzl", _ts_project = "ts_project")
 
 def esbuild_binary(
@@ -37,6 +38,7 @@ def esbuild_binary(
         name = name + "_esbuild_config",
         srcs = [
             ":" + name + "_esbuild_config_copy",
+            ":" + name + "_tailwind_config",
             "tailwind.theme.mjs",
         ],
         deps = [
@@ -54,20 +56,25 @@ def esbuild_binary(
             cmd = "echo 'export default {};' > $@",
         )
 
+    _expand_tailwind_config(
+        name = name + "_tailwind_config",
+        deps = deps,
+        output = name + "/tailwind.config.mjs",
+        template = "@dev_april_corgi//build_defs:tailwind.config.mjs",
+    )
+
     native.genrule(
         name = name + "_esbuild_config_copy",
         srcs = [
             "tailwind.theme.mjs",
             "@dev_april_corgi//build_defs:esbuild.config.mjs",
             "@dev_april_corgi//build_defs:postcss.config.mjs",
-            "@dev_april_corgi//build_defs:tailwind.config.mjs",
             "@dev_april_corgi//third_party/deanc-esbuild-plugin-postcss:index.js",
         ],
         outs = [
             name + "/esbuild.config.mjs",
             name + "/index.js",
             name + "/postcss.config.mjs",
-            name + "/tailwind.config.mjs",
             name + "/tailwind.theme.mjs",
         ],
         cmd = "\n".join([
@@ -134,3 +141,31 @@ def ts_project(name, srcs, deps = None, **kwargs):
         **kwargs
     )
 
+def _expand_tailwind_config_impl(ctx):
+    sources = []
+    for dep in ctx.attr.deps:
+        # Note that npm deps end up in npm_sources, not transitive_sources
+        for source in dep[JsInfo].transitive_sources.to_list():
+            if source.extension not in ["js", "jsx", "ts", "tsx"]:
+                continue
+            sources.append(source)
+    deduped = depset(sources).to_list()
+
+    return ctx.actions.expand_template(
+        output = ctx.outputs.output,
+        substitutions = {
+            "{FILES_TO_SEARCH}": ",".join([
+                "'" + f.path[len(ctx.bin_dir.path) + 1:] + "'" for f in deduped
+            ]),
+        },
+        template = ctx.file.template,
+    )
+
+_expand_tailwind_config = rule(
+    implementation = _expand_tailwind_config_impl,
+    attrs = dict({
+        "deps": attr.label_list(providers = [JsInfo], mandatory = True),
+        "template": attr.label(allow_single_file = True, mandatory = True),
+        "output": attr.output(mandatory = True),
+    }),
+)
