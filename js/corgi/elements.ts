@@ -55,12 +55,13 @@ declare global {
 
 export interface Properties {
   ariaLabel?: string;
+  autofocus?: boolean;
   children?: unknown[],
   className?: string;
   data?: {[key: string]: boolean|number|string};
   js?: AnyBoundController;
   style?: string; // TODO(april): this is sad
-  tabIndex?: string;
+  tabindex?: string;
   title?: string;
   unboundEvents?: UnboundEvents;
 }

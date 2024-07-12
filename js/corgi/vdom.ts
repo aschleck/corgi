@@ -531,7 +531,11 @@ function patchProperties(element: Element, from: AnyProperties, to: AnyPropertie
 
     if (!deepEqual(from[key], to[key])) {
       const value = to[key];
-      if (key === 'className') {
+      if (key === 'autofocus') {
+        if (value && element instanceof HTMLElement) {
+          element.focus();
+        }
+      } else if (key === 'className') {
         if (value) {
           element.setAttribute('class', String(value));
         } else {
