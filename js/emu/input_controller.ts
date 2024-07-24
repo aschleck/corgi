@@ -39,13 +39,13 @@ export class InputController extends Controller<Args, EmptyDeps, HTMLInputElemen
     this.trigger(UNFOCUSED, {});
   }
 
-  keyPressed(e: CorgiEvent<typeof DOM_KEYBOARD>): void {
+  async keyPressed(e: CorgiEvent<typeof DOM_KEYBOARD>): Promise<void> {
     if (e.detail.key === 'Enter') {
       this.trigger(ACTION, {});
     } else if (this.lastValue !== this.value) {
       this.lastValue = this.value;
       if (this.state.managed) {
-        this.updateState({
+        await this.updateState({
           managed: false,
         });
       }
