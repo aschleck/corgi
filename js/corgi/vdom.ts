@@ -533,7 +533,8 @@ function patchProperties(element: Element, from: AnyProperties, to: AnyPropertie
       const value = to[key];
       if (key === 'autofocus') {
         if (value && element instanceof HTMLElement) {
-          element.focus();
+          // Give the element a chance to be added to the page
+          setTimeout(() => { element.focus(); }, 0);
         }
       } else if (key === 'className') {
         if (value) {

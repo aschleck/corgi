@@ -3,6 +3,7 @@ import * as corgi from '../corgi';
 import { InputController, State } from './input_controller';
 
 type InputProps = {
+  autofocus?: boolean,
   className?: string,
   forceValue?: boolean,
   icon?: corgi.VElementOrPrimitive,
@@ -13,7 +14,18 @@ type InputProps = {
 } & corgi.InputProperties;
 
 export function Input(
-    {className, forceValue, icon, inset, name, placeholder, ref, value, ...props}: InputProps,
+    {
+      autofocus,
+      className,
+      forceValue,
+      icon,
+      inset,
+      name,
+      placeholder,
+      ref,
+      value,
+      ...props
+    }: InputProps,
     state: State|undefined,
     updateState: (newState: State) => void) {
   if (!state) {
@@ -41,6 +53,7 @@ export function Input(
             ref,
             state: [state, updateState],
           })}
+          autofocus={autofocus}
           className="bg-transparent grow max-w-full outline-none placeholder-current"
           name={name}
           placeholder={placeholder ?? ''}
