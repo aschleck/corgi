@@ -13,4 +13,6 @@
     "strict": true,
     "target": "es2020",
   },
+  // Workaround https://github.com/microsoft/TypeScript/issues/59036
+  "exclude": [],
 }
