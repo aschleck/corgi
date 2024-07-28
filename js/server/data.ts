@@ -7,7 +7,7 @@ type AsObjects<T extends string[]> = {[K in keyof T]: object};
 type KeyedTuples<T extends string[]> = {[K in keyof T]: [T[K], object]};
 
 const MAX_CACHE_ENTRIES = isServerSide() ? 0 : 10;
-const cache: Array<[object, object]> = initialData();
+const cache: Array<[key: DataKey, response: object]> = initialData();
 
 export function fetchDataBatch<T extends string[]>(tuples: KeyedTuples<T>):
     Future<AsObjects<T>> {
@@ -15,17 +15,14 @@ export function fetchDataBatch<T extends string[]>(tuples: KeyedTuples<T>):
   const missingIndices: number[] = [];
   const data: object[] = [];
   for (let i = 0; i < tuples.length; ++i) {
-    const [type, request] = tuples[i];
-    // TODO(april): this is dumb just make the type {type, request} and don't merge. type can
-    // conflict.
-    const withType = {...request, type};
-    const cached = getCache(withType);
+    const [method, request] = tuples[i];
+    const cached = getCache(method, request);
     if (cached) {
       data[i] = cached;
       continue;
     }
 
-    missing.push(withType);
+    missing.push({method, request});
     missingIndices.push(i);
   }
 
@@ -47,10 +44,11 @@ export function fetchDataBatch<T extends string[]>(tuples: KeyedTuples<T>):
   }
 }
 
-export function getCache(request: DataKey): object|undefined {
+export function getCache(method: string, request: object): object|undefined {
   let cached = -1;
+  const key = {method, request};
   for (let i = cache.length - 1; i >= 0; --i) {
-    if (deepEqual(cache[i][0], request)) {
+    if (deepEqual(cache[i][0], key)) {
       cached = i;
       break;
     }
@@ -66,17 +64,18 @@ export function getCache(request: DataKey): object|undefined {
   }
 }
 
-export function invalidateCache(invalidator: (request: object, response: object) => boolean): void {
+export function invalidateCache(
+    invalidator: (method: string, request: object, response: object) => boolean): void {
   const cleansed: typeof cache = [];
-  for (const [request, response] of cache) {
-    if (!invalidator(request, response)) {
-      cleansed.push([request, response]);
+  for (const [{method, request}, response] of cache) {
+    if (!invalidator(method, request, response)) {
+      cleansed.push([{method, request}, response]);
     }
   }
   cache.length = 0;
   cache.push(...cleansed);
 }
 
-export function putCache(type: string, request: object, response: object) {
-  cache.push([{type, ...request}, response]);
+export function putCache(method: string, request: object, response: object) {
+  cache.push([{method, request}, response]);
 }

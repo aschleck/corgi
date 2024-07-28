@@ -6,7 +6,8 @@ import { fetchGlobalDeps } from '../corgi/deps';
 import { HistoryService } from '../corgi/history/history_service';
 
 export interface DataKey {
-  type: string;
+  method: string;
+  request: object;
 }
 
 declare global {
