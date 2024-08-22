@@ -221,3 +221,9 @@ export class IdentitySetMultiMap<K, V> {
   }
 }
 
+export function getOnlyElement<V>(c: Iterable<V>): V {
+  for (const v of c) {
+    return v;
+  }
+  throw new Error('Given iterable is empty');
+}

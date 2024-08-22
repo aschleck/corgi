@@ -7,6 +7,10 @@ export class Query {
   constructor(private readonly frontier: SupportedElement[]) {
   }
 
+  children(): Query {
+    return new Query(this.frontier.flatMap(e => [...e.children] as SupportedElement[]));
+  }
+
   element(): SupportedElement {
     return this.one().frontier[0];
   }

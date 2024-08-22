@@ -1,3 +1,6 @@
+// We need to be careful not to compare objects that reference themselves recursively forever
+const RECURSIVE_CACHE = new WeakMap<object, object>();
+
 export function approxEqual(a: number, b: number, epsilon: number): boolean {
   return Math.abs(a - b) < epsilon;
 }
@@ -17,7 +20,35 @@ export function deepEqual(a: unknown|undefined, b: unknown|undefined): boolean {
     return true;
   } else if (a instanceof Function || b instanceof Function) {
     return a === b;
+  } else if (a instanceof Map && b instanceof Map) {
+    if (a.size !== b.size) {
+      return false;
+    }
+    const ak = new Set(a.keys());
+    const bk = new Set(b.keys());
+    for (const key of ak) {
+      if (!bk.has(key)) {
+        return false;
+      }
+      bk.delete(key);
+    }
+    if (bk.size > 0) {
+      return false;
+    }
+    for (const key of ak) {
+      if (!deepEqual(a.get(key), b.get(key))) {
+        return false;
+      }
+    }
+    return true;
   } else if (a instanceof Object && b instanceof Object) {
+    const alreadySeen = RECURSIVE_CACHE.get(a);
+    if (alreadySeen === b) {
+      return true;
+    } else {
+      RECURSIVE_CACHE.set(a, b);
+    }
+
     const aKeys = Object.keys(a);
     const bKeys = Object.keys(b);
     if (aKeys.length !== bKeys.length) {
@@ -33,6 +64,7 @@ export function deepEqual(a: unknown|undefined, b: unknown|undefined): boolean {
         return false;
       }
     }
+    RECURSIVE_CACHE.delete(a);
     return true;
   }
   return false;

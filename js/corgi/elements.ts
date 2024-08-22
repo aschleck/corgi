@@ -88,11 +88,13 @@ export interface InputProperties extends Properties {
   checked?: boolean;
   name?: string;
   placeholder?: string;
+  size?: number;
   type?: 'checkbox'|'password'|'radio'|'text';
   value?: string;
 }
 
 export interface OptionProperties extends Properties {
+  selected?: boolean;
   value?: string;
 }
 

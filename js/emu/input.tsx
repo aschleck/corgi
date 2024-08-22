@@ -10,6 +10,7 @@ type InputProps = {
   inset?: corgi.VElementOrPrimitive,
   name?: string,
   placeholder?: string,
+  size?: number,
   ref?: string,
 } & corgi.InputProperties;
 
@@ -23,6 +24,7 @@ export function Input(
       name,
       placeholder,
       ref,
+      size,
       value,
       ...props
     }: InputProps,
@@ -57,6 +59,7 @@ export function Input(
           className="bg-transparent grow max-w-full outline-none placeholder-current"
           name={name}
           placeholder={placeholder ?? ''}
+          size={size}
           value={forceValue || state.managed ? value : undefined}
       />
       {inset ?? ''}

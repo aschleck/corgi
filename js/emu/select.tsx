@@ -9,6 +9,7 @@ export function Select(
       options: Array<{
         label: string;
         value: string;
+        selected?: boolean;
       }>,
     } & corgi.Properties,
     state: State|undefined,
@@ -20,7 +21,7 @@ export function Select(
   return <>
     <label className={'inline-block' + (className ? ` ${className}` : '')} {...props}>
       <select
-          className={'h-full w-full'}
+          className={'bg-transparent h-full w-full'}
           js={corgi.bind({
             controller: SelectController,
             events: {
@@ -30,7 +31,7 @@ export function Select(
             state: [state, updateState],
           })}
       >
-        {options.map(o => <option value={o.value}>{o.label}</option>)}
+        {options.map(o => <option value={o.value} selected={o.selected}>{o.label}</option>)}
       </select>
     </label>
   </>;
