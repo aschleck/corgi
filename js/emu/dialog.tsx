@@ -8,8 +8,13 @@ export class DialogService extends Service<EmptyDeps> {
 
   display(content: corgi.VElementOrPrimitive): Promise<void> {
     return new Promise((resolve, reject) => {
-      corgi.appendElement(
-        document.body, <Dialog resolve={resolve} reject={reject}>{content}</Dialog>);
+      try {
+        corgi.appendElement(
+          document.body, <Dialog resolve={resolve} reject={reject}>{content}</Dialog>);
+      } catch (e: unknown) {
+        console.error(e);
+        reject();
+      }
     });
   }
 }
