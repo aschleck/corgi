@@ -61,10 +61,11 @@ vdomCaching.disable();
 export async function serve(
         app: ElementFactory,
         page: PageFn,
-        {dataServer, defaultTitle, initialize, port}: {
+        {dataServer, defaultTitle, initialize, host, port}: {
           dataServer?: string;
           defaultTitle: string;
           initialize?: (f: FastifyInstance) => Promise<void>,
+          host?: string;
           port: number;
         }):
     Promise<void> {
@@ -181,7 +182,7 @@ export async function serve(
     }
   });
 
-  server.listen({ port }, (err, address) => {
+  server.listen({ host, port }, (err, address) => {
     if (err) {
       throw err;
     }
