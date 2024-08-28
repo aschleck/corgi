@@ -1,11 +1,15 @@
-// We need to be careful not to compare objects that reference themselves recursively forever
-const RECURSIVE_CACHE = new WeakMap<object, object>();
-
 export function approxEqual(a: number, b: number, epsilon: number): boolean {
   return Math.abs(a - b) < epsilon;
 }
 
 export function deepEqual(a: unknown|undefined, b: unknown|undefined): boolean {
+  // We need to be careful not to compare objects that reference themselves recursively forever
+  const recursiveCache = new WeakMap<object, object>();
+  return realDeepEqual(a, b, recursiveCache);
+}
+
+function realDeepEqual(
+    a: unknown|undefined, b: unknown|undefined, recursiveCache: WeakMap<object, object>): boolean {
   if (a === b) {
     return true;
   } else if (a instanceof Array && b instanceof Array) {
@@ -13,7 +17,7 @@ export function deepEqual(a: unknown|undefined, b: unknown|undefined): boolean {
       return false;
     }
     for (let i = 0; i < a.length; ++i) {
-      if (!deepEqual(a[i], b[i])) {
+      if (!realDeepEqual(a[i], b[i], recursiveCache)) {
         return false;
       }
     }
@@ -36,17 +40,17 @@ export function deepEqual(a: unknown|undefined, b: unknown|undefined): boolean {
       return false;
     }
     for (const key of ak) {
-      if (!deepEqual(a.get(key), b.get(key))) {
+      if (!realDeepEqual(a.get(key), b.get(key), recursiveCache)) {
         return false;
       }
     }
     return true;
   } else if (a instanceof Object && b instanceof Object) {
-    const alreadySeen = RECURSIVE_CACHE.get(a);
+    const alreadySeen = recursiveCache.get(a);
     if (alreadySeen === b) {
       return true;
     } else {
-      RECURSIVE_CACHE.set(a, b);
+      recursiveCache.set(a, b);
     }
 
     const aKeys = Object.keys(a);
@@ -60,11 +64,11 @@ export function deepEqual(a: unknown|undefined, b: unknown|undefined): boolean {
       }
       const aValue = (a as {[k: string]: unknown})[key];
       const bValue = (b as {[k: string]: unknown})[key];
-      if (!deepEqual(aValue, bValue)) {
+      if (!realDeepEqual(aValue, bValue, recursiveCache)) {
         return false;
       }
     }
-    RECURSIVE_CACHE.delete(a);
+    recursiveCache.delete(a);
     return true;
   }
   return false;
