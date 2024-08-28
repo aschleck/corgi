@@ -7,8 +7,17 @@ export class Query {
   constructor(private readonly frontier: SupportedElement[]) {
   }
 
-  children(): Query {
-    return new Query(this.frontier.flatMap(e => [...e.children] as SupportedElement[]));
+  children(selector?: string): Query {
+    return new Query(
+      this.frontier
+        .flatMap(e => [...e.children] as SupportedElement[])
+        .filter(e => selector ? e.matches(selector) : true));
+  }
+
+  descendants(selector: string): Query {
+    return new Query(
+      this.frontier
+        .flatMap(e => [...e.querySelectorAll(selector)] as SupportedElement[]));
   }
 
   element(): SupportedElement {
