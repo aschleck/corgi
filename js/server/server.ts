@@ -130,9 +130,11 @@ export async function serve(
         const response = await fetch(host, {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',
-              'If-None-Match': request.headers['if-none-match'] ?? '',
-              'X-User-ID': request.userId,
+              'authorization': request.headers['authorization'] ?? '',
+              'content-type': 'application/json',
+              'if-none-match': request.headers['if-none-match'] ?? '',
+              'x-user-email': (request.headers['x-user-email'] as string | undefined) ?? '',
+              'x-user-id': (request.headers['x-user-id'] as string | undefined) ?? '',
             },
             body: JSON.stringify({
               keys: missingData,
