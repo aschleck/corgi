@@ -16,7 +16,7 @@ declare global {
     SERVER_SIDE_RENDER?: {
       cookies(): string;
       currentUrl(): string;
-      fetchDataBatch(keys: DataKey[]): Future<object[]>;
+      requestDataBatch(keys: DataKey[]): Future<object[]>;
       language(): string;
       redirectTo(url: string): void;
       setTitle(title: string): void;
@@ -37,9 +37,9 @@ export function currentUrl(): URL {
   return new URL(window.SERVER_SIDE_RENDER?.currentUrl() ?? window.location.href);
 }
 
-export function fetchDataBatch(keys: DataKey[]): Future<object[]> {
+export function requestDataBatch(keys: DataKey[]): Future<object[]> {
   if (window.SERVER_SIDE_RENDER) {
-    return window.SERVER_SIDE_RENDER.fetchDataBatch(keys);
+    return window.SERVER_SIDE_RENDER.requestDataBatch(keys);
   } else {
     const p = fetch('/api/data', {
       method: 'POST',

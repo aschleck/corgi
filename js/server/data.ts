@@ -1,7 +1,7 @@
 import { deepEqual } from '../common/comparisons';
 import { Future, resolvedFuture } from '../common/futures';
 
-import { DataKey, fetchDataBatch as ssrFetchDataBatch, initialData, isServerSide } from './ssr_aware';
+import { DataKey, requestDataBatch as ssrRequestDataBatch, initialData, isServerSide } from './ssr_aware';
 
 type AsObjects<T extends string[]> = {[K in keyof T]: object};
 type KeyedTuples<T extends string[]> = {[K in keyof T]: [T[K], object]};
@@ -29,7 +29,7 @@ export function fetchDataBatch<T extends string[]>(tuples: KeyedTuples<T>):
   if (missing.length === 0) {
     return resolvedFuture(data as AsObjects<T>);
   } else {
-    return ssrFetchDataBatch(missing)
+    return ssrRequestDataBatch(missing)
         .then(response => {
           for (let i = 0; i < response.length; ++i) {
             const value = response[i];
@@ -42,6 +42,35 @@ export function fetchDataBatch<T extends string[]>(tuples: KeyedTuples<T>):
           return data as AsObjects<T>;
         });
   }
+}
+
+// TODO(april): figure out whether to deduplicate this with fetchDataBatch and how... And maybe
+// upstream the better proto stuff?
+// Caching in fetchDataBatch doesn't make sense because the outer fetchData call return from the
+// cache there and it's more immediate and more resolvedFuture compatible.
+export function requestDataBatch<T extends string[]>(tuples: KeyedTuples<T>):
+    Future<AsObjects<T>> {
+  const missing: DataKey[] = [];
+  const missingIndices: number[] = [];
+  const data: object[] = Array(tuples.length);
+  for (let i = 0; i < tuples.length; ++i) {
+    const [method, request] = tuples[i];
+    missing.push({method, request});
+    missingIndices.push(i);
+  }
+
+  return ssrRequestDataBatch(missing)
+      .then(response => {
+        for (let i = 0; i < response.length; ++i) {
+          const value = response[i];
+          data[missingIndices[i]] = value;
+          cache.push([missing[i], value]);
+        }
+        if (cache.length > MAX_CACHE_ENTRIES) {
+          cache.splice(0, cache.length - MAX_CACHE_ENTRIES);
+        }
+        return data as AsObjects<T>;
+      });
 }
 
 export function getCache(method: string, request: object): object|undefined {

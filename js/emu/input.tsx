@@ -2,7 +2,7 @@ import * as corgi from '../corgi';
 
 import { InputController, State } from './input_controller';
 
-type InputProps = {
+export type InputProps = {
   autofocus?: boolean,
   className?: string,
   forceValue?: boolean,

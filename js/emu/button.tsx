@@ -2,7 +2,7 @@ import * as corgi from '../corgi';
 
 import { ButtonController, State } from './button_controller';
 
-type ButtonProps = {
+export type ButtonProps = {
   children?: corgi.VElementOrPrimitive[],
 } & corgi.ButtonProperties;
 

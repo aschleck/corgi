@@ -13,7 +13,7 @@ import { DataKey } from './ssr_aware';
 declare module '@fastify/request-context' {
   interface RequestContextData {
     cookies: string|undefined;
-    fetchDataBatch: (keys: DataKey[]) => Future<object[]>;
+    requestDataBatch: (keys: DataKey[]) => Future<object[]>;
     language: string|undefined;
     redirectTo: string;
     title: string;
@@ -35,8 +35,8 @@ global.window = {
     currentUrl: function() {
       return requestContext.get('url');
     },
-    fetchDataBatch: (keys: DataKey[]) => {
-      return checkExists(requestContext.get('fetchDataBatch'))(keys);
+    requestDataBatch: (keys: DataKey[]) => {
+      return checkExists(requestContext.get('requestDataBatch'))(keys);
     },
     language: function() {
       return requestContext.get('language');
@@ -91,7 +91,7 @@ export async function serve(
 
     const requestedData: Array<[DataKey, object]> = [];
     const missingData: DataKey[] = [];
-    requestContext.set('fetchDataBatch', (keys: DataKey[]) => {
+    requestContext.set('requestDataBatch', (keys: DataKey[]) => {
       const values = [];
       for (const key of keys) {
         let found = false;
