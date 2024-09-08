@@ -553,7 +553,9 @@ function patchProperties(element: Element, from: AnyProperties, to: AnyPropertie
             dataset[k] = v;
           }
         }
-      } else if (key === 'value' && element instanceof HTMLInputElement) {
+      } else if (
+        key === 'value'
+          && (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)) {
         if (value !== undefined) { // don't clear value if we are no longer forcing it
           element.value = String(value);
         }

@@ -15,7 +15,7 @@ def esbuild_binary(
     has_css = len(native.glob(["*.css"])) > 0 or len(css_deps or []) > 0
     esbuild(
         name = name,
-        # Some problem with the bazel-sandbox plugin not namespacing nodejs modules like 'fs'
+        # Some problem with the bazel-sandbox plugin not finding app.css
         bazel_sandbox_plugin = False,
         config = ":" + name + "/esbuild.config.mjs",
         entry_point = entry_point,
@@ -23,6 +23,9 @@ def esbuild_binary(
         srcs = [
             entry_point,
         ],
+        define = {
+            "process.env.CORGI_FOR_BROWSER": "true" if platform == "browser" else "false",
+        },
         deps = (css_deps or []) + (deps or []) + [
             ":" + name + "_esbuild_config",
             "@dev_april_corgi//third_party/deanc-esbuild-plugin-postcss",

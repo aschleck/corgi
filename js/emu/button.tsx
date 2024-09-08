@@ -14,11 +14,8 @@ export function Button(
     state = {};
   }
 
-  // TODO(april): I think this is wrapped in a label so we can put unboundEvents on it without
-  // having them sent to the ButtonController. But this really messes up padding classes. How to
-  // fix?
   return <>
-    <label className={'inline-block' + (className ? ` ${className}` : '')} {...props}>
+    <label className="inline-block" {...props}>
       <button
           js={corgi.bind({
             controller: ButtonController,
@@ -31,7 +28,7 @@ export function Button(
             state: [state, updateState],
           })}
           ariaLabel={ariaLabel}
-          className={'h-full [text-align:inherit] w-full'}
+          className={'h-full [text-align:inherit] w-full' + (className ? ` ${className}` : '')}
       >
         {children}
       </button>

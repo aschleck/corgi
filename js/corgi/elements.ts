@@ -35,6 +35,7 @@ declare global {
       p: Properties;
       path: PathProperties;
       polyline: PolylineProperties;
+      pre: Properties;
       section: Properties;
       select: Properties;
       span: Properties;
@@ -44,6 +45,7 @@ declare global {
       tbody: Properties;
       td: TdProperties;
       text: TextProperties;
+      textarea: TextAreaProperties;
       th: Properties;
       thead: Properties;
       time: Properties;
@@ -100,6 +102,12 @@ export interface OptionProperties extends Properties {
 
 export interface TdProperties extends Properties {
   colspan?: string;
+}
+
+export interface TextAreaProperties extends Properties {
+  name?: string;
+  placeholder?: string;
+  value?: string;
 }
 
 export interface SVGGraphicsProperties extends Properties {

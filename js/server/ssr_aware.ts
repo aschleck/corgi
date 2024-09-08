@@ -57,6 +57,7 @@ export function initialData(): Array<[key: DataKey, value: object]> {
 }
 
 export function isServerSide(): boolean {
+  // TODO(april): check CORGI_FOR_BROWSER
   return !!window.SERVER_SIDE_RENDER;
 }
 
