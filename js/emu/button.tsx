@@ -28,7 +28,7 @@ export function Button(
             state: [state, updateState],
           })}
           ariaLabel={ariaLabel}
-          className={'h-full [text-align:inherit] w-full' + (className ? ` ${className}` : '')}
+          className={'h-full max-w-full [text-align:inherit]' + (className ? ` ${className}` : '')}
       >
         {children}
       </button>

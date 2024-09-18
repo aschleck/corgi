@@ -2,7 +2,7 @@ import { Controller, Response } from '../corgi/controller';
 import { EmptyDeps } from '../corgi/deps';
 import { CorgiEvent, DOM_KEYBOARD } from '../corgi/events';
 
-import { ACTION, CHANGED, FOCUSED, UNFOCUSED } from './events';
+import { ACTION, CHANGED, FOCUSED, PRESSED, UNFOCUSED } from './events';
 
 interface Args {
   value: string|undefined;
@@ -50,6 +50,8 @@ export class InputController extends Controller<Args, EmptyDeps, HTMLInputElemen
         });
       }
       this.trigger(CHANGED, {value: this.value});
+    } else {
+      this.trigger(PRESSED, {key: e.detail.key});
     }
   }
 }

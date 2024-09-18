@@ -1,8 +1,10 @@
 import * as corgi from '../corgi';
 import { Controller, Response } from '../corgi/controller';
 import { EmptyDeps } from '../corgi/deps';
-import { CorgiEvent, DOM_MOUSE } from '../corgi/events';
+import { CorgiEvent, DOM_MOUSE, EventSpec } from '../corgi/events';
 import { Service } from '../corgi/service';
+
+import { CLOSE } from './events';
 
 export class DialogService extends Service<EmptyDeps> {
 
@@ -35,9 +37,18 @@ class DialogController extends Controller<Args, EmptyDeps, HTMLDivElement, State
     this.args = response.args;
   }
 
-  close(): void {
+  // This is a bit of a lie, it could be any DOM_* event, but we don't really care
+  close<E extends EventSpec<typeof CLOSE | typeof DOM_MOUSE>>(e: CorgiEvent<E>): void {
     this.root.remove();
-    this.args.resolve();
+    if ('kind' in e.detail) {
+      if (e.detail.kind === 'resolve') {
+        this.args.resolve();
+      } else {
+        this.args.reject();
+      }
+    } else {
+      this.args.resolve();
+    }
   }
 
   outsideClose(e: CorgiEvent<typeof DOM_MOUSE>): void {
@@ -69,6 +80,7 @@ function Dialog(
           state: [state, updateState],
           events: {
             click: 'outsideClose',
+            corgi: [[CLOSE, 'close']],
           },
         })}
         className="absolute bg-black/25 inset-0 z-50 dark:bg-black/50">

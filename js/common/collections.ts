@@ -221,6 +221,13 @@ export class IdentitySetMultiMap<K, V> {
   }
 }
 
+export function getFirstElement<V>(iterable: Iterable<V>): V {
+  for (const e of iterable) {
+    return e;
+  }
+  throw new Error('Iterable has no elements');
+}
+
 export function getOnlyElement<V>(c: Iterable<V>): V {
   for (const v of c) {
     return v;
