@@ -52,10 +52,8 @@ class DialogController extends Controller<Args, EmptyDeps, HTMLDivElement, State
   }
 
   outsideClose(e: CorgiEvent<typeof DOM_MOUSE>): void {
-    if (e.targetElement.element() === this.root) {
-      this.root.remove();
-      this.args.reject();
-    }
+    this.root.remove();
+    this.args.reject();
   }
 }
 
@@ -79,11 +77,15 @@ function Dialog(
           args: {resolve, reject},
           state: [state, updateState],
           events: {
-            click: 'outsideClose',
             corgi: [[CLOSE, 'close']],
           },
         })}
-        className="absolute bg-black/25 inset-0 z-50 dark:bg-black/50">
+        className="absolute inset-0 z-50">
+      <div
+          className="absolute bg-black/25 inset-0 dark:bg-black/50"
+          unboundEvents={{click: 'outsideClose'}}
+      >
+      </div>
       <div
           className={
             `absolute max-h-[90vh] max-w-[90vw] left-1/2 top-1/2 transform `
