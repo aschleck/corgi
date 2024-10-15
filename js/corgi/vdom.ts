@@ -168,7 +168,8 @@ function hydrateElementRecursively(
     } else {
       node = checkExists(left?.nextSibling ?? parent.childNodes[0]);
       checkArgument(node instanceof Text, 'Node should be text');
-      const need = String(element);
+      // When passed from the server, \r\n turns into \n
+      const need = String(element).replaceAll('\r\n', '\n');
       const current = node.textContent ?? '';
       checkArgument(current.startsWith(need), 'Text should match');
       if (current.length > need.length && current.startsWith(need)) {
