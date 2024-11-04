@@ -12,7 +12,7 @@ def esbuild_binary(
         deps = None,
         platform = "browser",
         minify = True):
-    has_css = len(native.glob(["*.css"])) > 0 or len(css_deps or []) > 0
+    has_css = len(native.glob(["*.css"], allow_empty=True)) > 0 or len(css_deps or []) > 0
     esbuild(
         name = name,
         # Some problem with the bazel-sandbox plugin not finding app.css
@@ -52,7 +52,7 @@ def esbuild_binary(
         ],
     )
 
-    if len(native.glob(["tailwind.theme.mjs"])) == 0:
+    if len(native.glob(["tailwind.theme.mjs"], allow_empty=True)) == 0:
         native.genrule(
             name = name + "_tailwind_theme",
             outs = ["tailwind.theme.mjs"],
@@ -89,7 +89,11 @@ def esbuild_binary(
     )
 
 def c_ts_project(name, srcs = None, css_deps = None, data = None, deps = None):
-    srcs = srcs or native.glob(["*.ts", "*.tsx"], exclude = ["*.test.ts", "*.test.tsx"])
+    srcs = srcs or native.glob(
+        ["*.ts", "*.tsx"],
+        allow_empty=True,
+        exclude = ["*.test.ts", "*.test.tsx"]
+    )
 
     ts_project(
         name = name,
@@ -98,7 +102,7 @@ def c_ts_project(name, srcs = None, css_deps = None, data = None, deps = None):
         deps = deps,
     )
 
-    if native.glob(["*.css"]):
+    if len(native.glob(["*.css"], allow_empty=True)):
         js_library(
             name = "css",
             srcs = native.glob(["*.css"]),
@@ -110,10 +114,10 @@ def c_ts_project(name, srcs = None, css_deps = None, data = None, deps = None):
             deps = css_deps or [],
         )
 
-    if native.glob(["*.test.ts", "*.test.tsx"]):
+    if len(native.glob(["*.test.ts", "*.test.tsx"], allow_empty=True)):
         ts_project(
             name = "tests",
-            srcs = native.glob(["*.test.ts", "*.test.tsx"]),
+            srcs = native.glob(["*.test.ts", "*.test.tsx"], allow_empty=True),
             deps = [
                 ":%s" % name,
                 "//:node_modules/@types/jest",
