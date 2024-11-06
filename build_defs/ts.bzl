@@ -12,12 +12,14 @@ def esbuild_binary(
         deps = None,
         platform = "browser",
         minify = True):
-    has_css = len(native.glob(["*.css"], allow_empty=True)) > 0 or len(css_deps or []) > 0
+    has_css = len(native.glob(["*.css"], allow_empty=True)) > 0
     esbuild(
         name = name,
         # Some problem with the bazel-sandbox plugin not finding app.css
         bazel_sandbox_plugin = False,
-        config = ":" + name + "/esbuild.config.mjs",
+        config = ":" + name + (
+            "/esbuild_browser_config.js" if platform == "browser" else "/esbuild_node_config.js"
+        ),
         entry_point = entry_point,
         tsconfig = "//:tsconfig",
         srcs = [
@@ -30,11 +32,12 @@ def esbuild_binary(
             ":" + name + "_esbuild_config",
             "@dev_april_corgi//third_party/deanc-esbuild-plugin-postcss",
         ],
+        format = "esm",
         minify = minify,
         output_css = "%s.css" % name if has_css else None,
         platform = platform,
         sources_content = True,
-        target = "es2020",
+        target = "es2022",
     )
 
     js_library(
@@ -70,12 +73,16 @@ def esbuild_binary(
         name = name + "_esbuild_config_copy",
         srcs = [
             "tailwind.theme.mjs",
-            "@dev_april_corgi//build_defs:esbuild.config.mjs",
+            "@dev_april_corgi//build_defs:esbuild_browser_config.js",
+            "@dev_april_corgi//build_defs:esbuild_node_config.js",
+            "@dev_april_corgi//build_defs:esbuild_cjs_inject.js",
             "@dev_april_corgi//build_defs:postcss.config.mjs",
             "@dev_april_corgi//third_party/deanc-esbuild-plugin-postcss:index.js",
         ],
         outs = [
-            name + "/esbuild.config.mjs",
+            name + "/esbuild_browser_config.js",
+            name + "/esbuild_cjs_inject.js",
+            name + "/esbuild_node_config.js",
             name + "/index.js",
             name + "/postcss.config.mjs",
             name + "/tailwind.theme.mjs",
@@ -97,7 +104,9 @@ def c_ts_project(name, srcs = None, css_deps = None, data = None, deps = None):
 
     ts_project(
         name = name,
-        srcs = srcs,
+        srcs = srcs + [
+            "//:package_json",
+        ],
         data = data,
         deps = deps,
     )
@@ -129,6 +138,7 @@ def c_ts_project(name, srcs = None, css_deps = None, data = None, deps = None):
             name = "jest",
             config = "@dev_april_corgi//build_defs:jest_config",
             node_modules = "//:node_modules",
+            node_options = ["--experimental-vm-modules"],
             data = [
                 ":tests",
                 "//:tsconfig",

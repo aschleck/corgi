@@ -8,10 +8,10 @@
     "jsx": "react",
     "jsxFactory": "corgi.createVirtualElement",
     "jsxFragmentFactory": "corgi.Fragment",
-    "module": "commonjs", // for Jest
-    "moduleResolution": "node",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "strict": true,
-    "target": "es2021",
+    "target": "es2022",
   },
   // Workaround https://github.com/microsoft/TypeScript/issues/59036
   "exclude": [],

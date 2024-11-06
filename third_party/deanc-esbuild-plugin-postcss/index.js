@@ -1,11 +1,11 @@
-const fs = require("fs/promises");
-const postcss = require("postcss");
-const util = require("util");
-const path = require("path");
+import * as fs from "node:fs/promises";
+import * as util from "node:util";
+import * as path from "node:path";
+import postcss from "postcss";
 
 const TMP_NAME = "postcss_temp";
 
-module.exports = (options = { plugins: [] }) => ({
+export default (options = { plugins: [] }) => ({
   name: "postcss",
   setup: function (build) {
     build.onResolve(

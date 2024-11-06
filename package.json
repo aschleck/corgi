@@ -1,5 +1,6 @@
 {
   "//": "stack-chain is an undeclared dep of cls-hooked, yikes!",
+  "type": "module",
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "@types/node": "^20.14.9",
