@@ -56,11 +56,6 @@ export function initialData(): Array<[key: DataKey, value: object]> {
   return window.INITIAL_DATA ?? [];
 }
 
-export function isServerSide(): boolean {
-  // TODO(april): check CORGI_FOR_BROWSER
-  return !!window.SERVER_SIDE_RENDER;
-}
-
 export function getLanguage(): string {
   return window.SERVER_SIDE_RENDER?.language() ?? window.navigator?.language ?? 'unknown';
 }

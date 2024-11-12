@@ -27,6 +27,7 @@ ts_project(
     name = "client",
     srcs = CLIENT_FILES,
     deps = [
+        "//:node_modules/@types/node",
         "//js/common",
         "//js/corgi",
         "//js/corgi/history",

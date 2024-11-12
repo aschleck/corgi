@@ -1,12 +1,12 @@
 import { deepEqual } from '../common/comparisons';
 import { Future, resolvedFuture } from '../common/futures';
 
-import { DataKey, requestDataBatch as ssrRequestDataBatch, initialData, isServerSide } from './ssr_aware';
+import { DataKey, requestDataBatch as ssrRequestDataBatch, initialData } from './ssr_aware';
 
 type AsObjects<T extends string[]> = {[K in keyof T]: object};
 type KeyedTuples<T extends string[]> = {[K in keyof T]: [T[K], object]};
 
-const MAX_CACHE_ENTRIES = isServerSide() ? 0 : 10;
+const MAX_CACHE_ENTRIES = process.env.CORGI_FOR_BROWSER ? 10 : 0;
 const cache: Array<[key: DataKey, response: object]> = initialData();
 
 export function fetchDataBatch<T extends string[]>(tuples: KeyedTuples<T>):
