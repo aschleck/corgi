@@ -6,12 +6,13 @@ load("@aspect_rules_js//js:providers.bzl", "JsInfo")
 load("@aspect_rules_ts//ts:defs.bzl", _ts_project = "ts_project")
 
 def esbuild_binary(
-        name,
-        entry_point = None,
-        css_deps = None,
-        deps = None,
-        platform = "browser",
-        minify = True):
+            name,
+            entry_point = None,
+            css_deps = None,
+            deps = None,
+            platform = "browser",
+            minify = True,
+        ):
     has_css = len(native.glob(["*.css"], allow_empty=True)) > 0
     esbuild(
         name = name,
@@ -95,7 +96,15 @@ def esbuild_binary(
         ]),
     )
 
-def c_ts_project(name, srcs = None, css_deps = None, data = None, deps = None):
+def c_ts_project(
+            name,
+            srcs = None,
+            css_deps = None,
+            data = None,
+            deps = None,
+            test_deps = None,
+            testonly = None,
+        ):
     srcs = srcs or native.glob(
         ["*.ts", "*.tsx"],
         allow_empty=True,
@@ -109,6 +118,7 @@ def c_ts_project(name, srcs = None, css_deps = None, data = None, deps = None):
         ],
         data = data,
         deps = deps,
+        testonly = testonly,
     )
 
     if len(native.glob(["*.css"], allow_empty=True)):
@@ -116,18 +126,21 @@ def c_ts_project(name, srcs = None, css_deps = None, data = None, deps = None):
             name = "css",
             srcs = native.glob(["*.css"]),
             deps = css_deps or [],
+            testonly = testonly,
         )
     else:
         js_library(
             name = "css",
             deps = css_deps or [],
+            testonly = testonly,
         )
 
     if len(native.glob(["*.test.ts", "*.test.tsx"], allow_empty=True)):
         ts_project(
             name = "tests",
             srcs = native.glob(["*.test.ts", "*.test.tsx"], allow_empty=True),
-            deps = [
+            testonly = True,
+            deps = (test_deps or []) + [
                 ":%s" % name,
                 "//:node_modules/@types/jest",
                 "//:node_modules/jest-environment-jsdom",
