@@ -164,7 +164,7 @@ export async function serve(
 
     const redirectUrl = requestContext.get('redirectTo');
     if (redirectUrl) {
-      return reply.redirect(302, encodeURI(redirectUrl));
+      return reply.redirect(encodeURI(redirectUrl), 302);
     }
 
     const escapedData = JSON.stringify(requestedData).replace(/\//g, '\\/');

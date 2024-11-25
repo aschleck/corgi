@@ -581,8 +581,8 @@
     },
     "@@aspect_rules_esbuild~//esbuild:extensions.bzl%esbuild": {
       "general": {
-        "bzlTransitiveDigest": "DIB6S0/lX6TetdJq2wy12ZBGfE21cMLYQgCdrcRrYbw=",
-        "usagesDigest": "/BhCknHHwvLzO5cLGNj0kxmpr7MzEDCk7RmJd7qVLpY=",
+        "bzlTransitiveDigest": "iGAvSPYvsNDqiWeeenHf6WTVHfA237nralK8Ev2dvW4=",
+        "usagesDigest": "UCJ8swRW3CxcqzI8zwVZ66oFpaYJO8x6dE/IfwwjQGA=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -611,7 +611,8 @@
               "lifecycle_hooks": [],
               "extra_build_content": "",
               "generate_bzl_library_targets": false,
-              "extract_full_archive": false
+              "extract_full_archive": false,
+              "system_tar": "auto"
             }
           },
           "npm__esbuild_0.19.9__links": {
@@ -833,7 +834,7 @@
     },
     "@@aspect_rules_ts~//ts:extensions.bzl%ext%<root>~rules_ts_ext": {
       "general": {
-        "bzlTransitiveDigest": "LMt02I/8xz7UsAc3Cz90PajizzqTIp8Hn7mSQ8xMmFQ=",
+        "bzlTransitiveDigest": "Yi5N1wlOG/aoh3owkjBe6Qai6ffQoTz+tWfji9NiGIs=",
         "usagesDigest": "cLzmIjtkFiv3zU+WaO37OzFMWwd8AVFw5ymdvCMPQ20=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -844,7 +845,7 @@
             "ruleClassName": "http_archive_version",
             "attributes": {
               "bzlmod": true,
-              "version": "5.4.5",
+              "version": "5.5.4",
               "integrity": "",
               "build_file": "@@aspect_rules_ts~//ts:BUILD.typescript",
               "build_file_substitutions": {
@@ -886,7 +887,7 @@
     "@@rules_nodejs~//nodejs:extensions.bzl%node": {
       "general": {
         "bzlTransitiveDigest": "0IJr1Jg3Dns9QKY65MtauFLtHjjP3n1DgN0+ZAjFYXo=",
-        "usagesDigest": "luggbg+LP+vo6/N0agoja7Q9/LeFyZv6dVXXDUYgXaM=",
+        "usagesDigest": "owIhKv8ZeI07jPmRHXIp2lb6gRlLM0R1tCm9OzlsyxQ=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
