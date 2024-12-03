@@ -2,7 +2,7 @@ import * as corgi from '../corgi';
 
 import { CheckboxController, State } from './checkbox_controller';
 
-type CheckboxProps = {
+export type CheckboxProps = {
   ariaLabel?: string;
   checked?: boolean;
   children?: corgi.VElementOrPrimitive[];
