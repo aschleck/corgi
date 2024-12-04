@@ -1,7 +1,4 @@
-import { deepEqual } from '../common/comparisons';
-import { debugMode } from '../common/debug';
 import { Future, asFuture } from '../common/futures';
-import { maybeMemoized } from '../common/memoized';
 import { fetchGlobalDeps } from '../corgi/deps';
 import { HistoryService } from '../corgi/history/history_service';
 
@@ -21,15 +18,6 @@ declare global {
       redirectTo(url: string): void;
       setTitle(title: string): void;
     };
-  }
-}
-
-class FakeMemoized<T> {
-
-  constructor(private readonly fn: () => T) {}
-
-  get value(): T {
-    return this.fn();
   }
 }
 
