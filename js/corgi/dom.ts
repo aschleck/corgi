@@ -24,6 +24,10 @@ export class Query {
     return this.one().frontier[0];
   }
 
+  elements(): SupportedElement[] {
+    return this.frontier;
+  }
+
   one(): QueryOne {
     if (this.frontier.length > 1) {
       throw new Error('More than one element in query');
