@@ -80,7 +80,7 @@ export function createVirtualElement(
 
       creationTrace.push([]);
       lastCreationTrace.push([...physical.childTrace]);
-      const result = maybeWrapPrimitive(element({children, ...props}, newState, updateState));
+      const result = wrap(element({children, ...props}, newState, updateState));
       lastCreationTrace.pop();
       result.handle = handle;
       result.childTrace = checkExists(creationTrace.pop());
@@ -113,7 +113,7 @@ export function createVirtualElement(
 
     creationTrace.push([]);
     const result =
-        maybeWrapPrimitive(
+        wrap(
             element({
               children: flatChildren,
               ...props,
@@ -642,18 +642,14 @@ function maybeCreateHandle(element: VElementOrPrimitive): Handle {
   }
 }
 
-function maybeWrapPrimitive(element: VElementOrPrimitive): VElement {
-  if (element instanceof Object) {
-    return element;
-  } else {
-    return {
-      tag: Fragment,
-      children: [element],
-      childTrace: [],
-      handle: createHandle(),
-      factorySource: undefined,
-      props: {},
-    };
-  }
+function wrap(element: VElementOrPrimitive): VElement {
+  return {
+    tag: Fragment,
+    children: [element],
+    childTrace: [],
+    handle: createHandle(),
+    factorySource: undefined,
+    props: {},
+  };
 }
 
