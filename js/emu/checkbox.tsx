@@ -7,10 +7,12 @@ export type CheckboxProps = {
   checked?: boolean;
   children?: corgi.VElementOrPrimitive[];
   className?: string;
+  key?: string,
+  ref?: string,
 } & corgi.Properties;
 
 export function Checkbox(
-    {ariaLabel, checked, children, className, ...props}: CheckboxProps,
+    {ariaLabel, checked, children, className, key, ref, ...props}: CheckboxProps,
     state: State|undefined,
     updateState: (newState: State) => void) {
   if (!state) {
@@ -28,6 +30,8 @@ export function Checkbox(
               'click': 'clicked',
               'keyup': 'keyPressed',
             },
+            key,
+            ref,
             state: [state, updateState],
           })}
           ariaLabel={ariaLabel}

@@ -24,8 +24,16 @@ export class Query {
     return this.one().frontier[0];
   }
 
-  elements(): SupportedElement[] {
-    return this.frontier;
+  filter(fn: (element: Query) => boolean): Query {
+    return new Query(this.frontier.filter(e => fn(new Query([e]))));
+  }
+
+  map<R>(fn: (element: Query) => R): R[] {
+    return this.all().map(fn);
+  }
+
+  all(): QueryOne[] {
+    return this.frontier.map(e => new QueryOne(e));
   }
 
   one(): QueryOne {
@@ -66,7 +74,9 @@ export class Query {
     const found = this.frontier.flatMap(e =>
         elementFinder(
             e,
-            candidate => candidate.getAttribute('data-ref') === ref,
+            candidate =>
+              candidate.getAttribute('data-ref') === ref
+                || candidate.getAttribute('data-js-ref') == ref,
             parent => !parent.hasAttribute('data-js')));
     return new Query(found);
   }

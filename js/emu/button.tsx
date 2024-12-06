@@ -4,10 +4,11 @@ import { ButtonController, State } from './button_controller';
 
 export type ButtonProps = {
   children?: corgi.VElementOrPrimitive[],
+  ref?: string,
 } & corgi.ButtonProperties;
 
 export function Button(
-    {ariaLabel, children, className, ...props}: ButtonProps,
+    {ariaLabel, children, className, ref, ...props}: ButtonProps,
     state: State|undefined,
     updateState: (newState: State) => void) {
   if (!state) {
@@ -25,6 +26,7 @@ export function Button(
               'focusout': 'unfocused',
               'keyup': 'keyPressed',
             },
+            ref,
             state: [state, updateState],
           })}
           ariaLabel={ariaLabel}
@@ -37,7 +39,7 @@ export function Button(
 }
 
 export function Link(
-    {children, className, ...props}: ButtonProps,
+    {children, className, ref, ...props}: ButtonProps,
     state: State|undefined,
     updateState: (newState: State) => void) {
   if (!state) {
@@ -55,6 +57,7 @@ export function Link(
               'focusout': 'unfocused',
               'keyup': 'keyPressed',
             },
+            ref,
             state: [state, updateState],
           })}
           className={'cursor-pointer' + (className ? ` ${className}` : '')}
