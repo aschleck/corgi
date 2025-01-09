@@ -69,6 +69,20 @@ export interface Properties {
   unboundEvents?: UnboundEvents;
 }
 
+interface SVGFilledProperties {
+  fill?: string;
+  fillOpacity?: number|string;
+}
+
+interface SVGStrokedProperties {
+  stroke?: string;
+  strokeLinecap?: 'butt'|'round'|'square';
+  strokeLinejoin?: 'arcs'|'bevel'|'miter'|'miter-clip'|'round';
+  strokeMiterlimit?: number|string;
+  strokeOpacity?: number|string;
+  strokeWidth?: number|string;
+}
+
 export interface AnchorProperties extends Properties {
   href?: string;
   target?: '_self'|'_blank'|'_parent'|'_top';
@@ -77,8 +91,6 @@ export interface AnchorProperties extends Properties {
 export interface ButtonProperties extends Properties {
   type?: 'submit';
 }
-
-export interface GroupProperties extends Properties {}
 
 export interface ImageProperties extends Properties {
   alt?: string;
@@ -112,41 +124,41 @@ export interface TextAreaProperties extends Properties {
 }
 
 export interface SVGGraphicsProperties extends Properties {
+  transform?: string;
+  transformOrigin?: string;
   vectorEffect?: 'none'|'non-scaling-stroke'|'non-scaling-size'|'non-rotation'|'fixed-position';
 }
 
-export interface CircleProperties extends SVGGraphicsProperties, Properties {
-  fill?: string;
-  stroke?: string;
-  strokeWidth?: number|string;
+export interface CircleProperties
+    extends SVGGraphicsProperties, SVGFilledProperties, SVGStrokedProperties, Properties {
   cx: number|string;
   cy: number|string;
   r: number|string;
 }
 
-export interface LineProperties extends SVGGraphicsProperties, Properties {
-  stroke?: string;
-  strokeLinejoin?: 'arcs'|'bevel'|'miter'|'miter-clip'|'round';
-  strokeWidth?: number|string;
+export interface GroupProperties
+  extends
+    Properties,
+    SVGFilledProperties,
+    SVGGraphicsProperties,
+    SVGStrokedProperties,
+    TextProperties {
+}
+
+export interface LineProperties extends SVGGraphicsProperties, SVGStrokedProperties, Properties {
   x1: number|string;
   y1: number|string;
   x2: number|string;
   y2: number|string;
 }
 
-export interface PathProperties extends SVGGraphicsProperties, Properties {
+export interface PathProperties
+    extends SVGGraphicsProperties, SVGFilledProperties, SVGStrokedProperties, Properties {
   d: string;
-  fill?: string;
-  stroke?: string;
-  strokeLinejoin?: 'arcs'|'bevel'|'miter'|'miter-clip'|'round';
-  strokeWidth?: number|string;
 }
 
-export interface RectProperties extends SVGGraphicsProperties, Properties {
-  fill?: string;
-  stroke?: string;
-  strokeLinejoin?: 'arcs'|'bevel'|'miter'|'miter-clip'|'round';
-  strokeWidth?: number|string;
+export interface RectProperties
+    extends SVGGraphicsProperties, SVGFilledProperties, SVGStrokedProperties, Properties {
   rx?: number|string;
   ry?: number|string;
   width: number|string;
@@ -155,11 +167,8 @@ export interface RectProperties extends SVGGraphicsProperties, Properties {
   y: number|string;
 }
 
-export interface PolylineProperties extends SVGGraphicsProperties, Properties {
-  fill?: string;
-  stroke?: string;
-  strokeLinejoin?: 'arcs'|'bevel'|'miter'|'miter-clip'|'round';
-  strokeWidth?: number|string;
+export interface PolylineProperties
+    extends SVGGraphicsProperties, SVGFilledProperties, SVGStrokedProperties, Properties {
   points: string;
 }
 
@@ -173,6 +182,8 @@ export interface TextProperties extends SVGGraphicsProperties, Properties {
   dominantBaseline?:
       'auto'|'text-bottom'|'alphabetic'|'ideographic'|'middle'|'central'|'mathematical'|'hanging'
             |'text-top';
+  fontSize?: string;
+  fontStretch?: number|string;
   textAnchor?: 'start'|'middle'|'end';
   x?: number|string;
   y?: number|string;
