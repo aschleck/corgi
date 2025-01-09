@@ -36,6 +36,7 @@ declare global {
       path: PathProperties;
       polyline: PolylineProperties;
       pre: Properties;
+      rect: RectProperties;
       section: Properties;
       select: Properties;
       span: Properties;
@@ -139,6 +140,19 @@ export interface PathProperties extends SVGGraphicsProperties, Properties {
   stroke?: string;
   strokeLinejoin?: 'arcs'|'bevel'|'miter'|'miter-clip'|'round';
   strokeWidth?: number|string;
+}
+
+export interface RectProperties extends SVGGraphicsProperties, Properties {
+  fill?: string;
+  stroke?: string;
+  strokeLinejoin?: 'arcs'|'bevel'|'miter'|'miter-clip'|'round';
+  strokeWidth?: number|string;
+  rx?: number|string;
+  ry?: number|string;
+  width: number|string;
+  height: number|string;
+  x: number|string;
+  y: number|string;
 }
 
 export interface PolylineProperties extends SVGGraphicsProperties, Properties {
