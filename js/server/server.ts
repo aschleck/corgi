@@ -244,7 +244,7 @@ function renderProperties(props: Properties): string {
         continue;
       }
     } else {
-      actualKey = key.replace('_', '-');
+      actualKey = canonicalize(key);
     }
 
     attributes.push(...renderAttribute(actualKey, actualValue));
