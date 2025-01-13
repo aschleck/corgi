@@ -61,6 +61,7 @@ export function createVirtualElement(
     props: Properties|null,
     ...children: Array<VElementOrPrimitive|VElementOrPrimitive[]>): VElementOrPrimitive {
   const handle = createHandle();
+  const flatChildren = deepFlatten(children);
 
   if (element instanceof Function) {
     const updateState = (newState: unknown) => {
@@ -80,7 +81,7 @@ export function createVirtualElement(
 
       creationTrace.push([]);
       lastCreationTrace.push([...physical.childTrace]);
-      const result = wrap(element({children, ...props}, newState, updateState));
+      const result = wrap(element({children: flatChildren, ...props}, newState, updateState));
       lastCreationTrace.pop();
       result.handle = handle;
       result.childTrace = checkExists(creationTrace.pop());
@@ -92,8 +93,6 @@ export function createVirtualElement(
       };
       patchChildren(physical.parent, [handle], [result], /* placeholder= */ undefined);
     };
-
-    const flatChildren = children.flat();
 
     const lastTrace = lastCreationTrace[lastCreationTrace.length - 1];
     const lastHandle = lastTrace?.shift();
@@ -132,7 +131,7 @@ export function createVirtualElement(
   } else {
     return {
       tag: element,
-      children: children.flat(),
+      children: flatChildren,
       handle,
       props: props ?? {},
       childTrace: [],
@@ -619,6 +618,18 @@ export function canonicalize(key: string): string {
 
 function createHandle(): Handle {
   return {id: ++nextElementId} as Handle;
+}
+
+function deepFlatten<V>(items: Array<V | V[]>): V[] {
+  const flattened: V[] = [];
+  for (const item of items) {
+    if (Array.isArray(item)) {
+      flattened.push(...deepFlatten(item));
+    } else {
+      flattened.push(item);
+    }
+  }
+  return flattened;
 }
 
 function findLastChildOrPlaceholder(element: PhysicalElement): Node {
