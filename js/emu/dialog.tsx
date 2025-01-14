@@ -80,7 +80,7 @@ function Dialog(
             corgi: [[CLOSE, 'close']],
           },
         })}
-        className="absolute inset-0 z-50">
+        className="fixed inset-0 z-50">
       <div
           className="absolute bg-black/25 inset-0 dark:bg-black/50"
           unboundEvents={{click: 'outsideClose'}}
