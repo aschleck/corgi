@@ -2,7 +2,7 @@ import { Disposable } from './disposable';
 
 export class Timer extends Disposable {
 
-  private current: number|undefined;
+  private current: ReturnType<typeof setTimeout>|undefined;
 
   constructor(
       private readonly delayMs: number,

@@ -1,6 +1,6 @@
 export class Debouncer {
 
-  private currentTimer: number|undefined;
+  private currentTimer: ReturnType<typeof setTimeout>|undefined;
 
   constructor(
       private readonly delayMs: number,
