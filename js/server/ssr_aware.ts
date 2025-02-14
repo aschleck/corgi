@@ -1,3 +1,4 @@
+import { checkExists } from '../common/asserts';
 import { Future, asFuture } from '../common/futures';
 import { fetchGlobalDeps } from '../corgi/deps';
 import { HistoryService } from '../corgi/history/history_service';
@@ -22,13 +23,17 @@ declare global {
 }
 
 export function currentUrl(): URL {
-  return new URL(window.SERVER_SIDE_RENDER?.currentUrl() ?? window.location.href);
+  let url;
+  if (process.env.CORGI_FOR_BROWSER) {
+    url = window.location.href;
+  } else {
+    url = checkExists(window.SERVER_SIDE_RENDER).currentUrl();
+  }
+  return new URL(url);
 }
 
 export function requestDataBatch(keys: DataKey[]): Future<object[]> {
-  if (window.SERVER_SIDE_RENDER) {
-    return window.SERVER_SIDE_RENDER.requestDataBatch(keys);
-  } else {
+  if (process.env.CORGI_FOR_BROWSER) {
     const p = fetch('/api/data', {
       method: 'POST',
       body: JSON.stringify({keys}),
@@ -37,6 +42,8 @@ export function requestDataBatch(keys: DataKey[]): Future<object[]> {
         .then(response => response.json())
         .then(response => response.values);
     return asFuture(p);
+  } else {
+    return checkExists(window.SERVER_SIDE_RENDER).requestDataBatch(keys);
   }
 }
 
@@ -45,26 +52,32 @@ export function initialData(): Array<[key: DataKey, value: object]> {
 }
 
 export function getLanguage(): string {
-  return window.SERVER_SIDE_RENDER?.language() ?? window.navigator?.language ?? 'unknown';
+  let language;
+  if (process.env.CORGI_FOR_BROWSER) {
+    language = window.navigator?.language;
+  } else {
+    language = checkExists(window.SERVER_SIDE_RENDER).language();
+  }
+  return language ?? 'unknown';
 }
 
 export function redirectTo(url: string): void {
-  if (window.SERVER_SIDE_RENDER) {
-    window.SERVER_SIDE_RENDER.redirectTo(url);
-  } else {
+  if (process.env.CORGI_FOR_BROWSER) {
     fetchGlobalDeps({
       services: {history: HistoryService},
     }).then(deps => {
       deps.services.history.replaceTo(url);
     });
+  } else {
+    checkExists(window.SERVER_SIDE_RENDER).redirectTo(url);
   }
 }
 
 export function setTitle(title: string): void {
-  if (window.SERVER_SIDE_RENDER) {
-    window.SERVER_SIDE_RENDER.setTitle(title);
-  } else {
+  if (process.env.CORGI_FOR_BROWSER) {
     document.title = title;
+  } else {
+    checkExists(window.SERVER_SIDE_RENDER).setTitle(title);
   }
 }
 

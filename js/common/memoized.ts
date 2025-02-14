@@ -23,7 +23,7 @@ class FakeMemoized<T> {
 }
 
 export function maybeMemoized<T>(fn: () => T): {value: T} {
-  if (globalThis.window && !('SERVER_SIDE_RENDER' in globalThis.window)) {
+  if (process.env.CORGI_FOR_BROWSER) {
     return new Memoized<T>(fn);
   } else {
     return new FakeMemoized<T>(fn);
