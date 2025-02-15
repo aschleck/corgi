@@ -4,14 +4,14 @@ import { deepEqual } from '../common/comparisons';
 
 import { AnyProperties, Properties } from './elements';
 
-export const Fragment = Symbol();
+export const FRAGMENT_MARKER = Symbol();
 
 type Handle = {__brand: 'Handle'} & {
   id: number;
 };
 
 interface VElement {
-  tag: string|(typeof Fragment);
+  tag: string|(typeof FRAGMENT_MARKER);
   children: VElementOrPrimitive[];
   handle: Handle;
   props: Properties;
@@ -57,7 +57,7 @@ export function addListener(listener: Listener): void {
 }
 
 export function createVirtualElement(
-    element: keyof HTMLElementTagNameMap|ElementFactory|(typeof Fragment),
+    element: keyof HTMLElementTagNameMap|ElementFactory,
     props: Properties|null,
     ...children: Array<VElementOrPrimitive|VElementOrPrimitive[]>): VElementOrPrimitive {
   const handle = createHandle();
@@ -195,7 +195,7 @@ function hydrateElementRecursively(
     };
   }
 
-  if (element.tag === Fragment) {
+  if (element.tag === FRAGMENT_MARKER) {
     const childHandles = [];
     let childLeft = left;
     for (const child of element.children) {
@@ -309,7 +309,7 @@ function* createElement(element: VElementOrPrimitive, handle: Handle, parent: El
     childHandles.push(maybeCreateHandle(child));
   }
 
-  if (element.tag === Fragment) {
+  if (element.tag === FRAGMENT_MARKER) {
     const created = [];
     for (let i = 0; i < element.children.length; ++i) {
       const child = element.children[i];
@@ -380,7 +380,7 @@ function patchChildren(
     const isElement = is[i];
 
     if (wasElement.self === undefined
-        && (isElement instanceof Object && isElement.tag === Fragment)) {
+        && (isElement instanceof Object && isElement.tag === FRAGMENT_MARKER)) {
       const handle = maybeCreateHandle(isElement);
       newHandles.push(handle);
 
@@ -423,7 +423,7 @@ function patchChildren(
       replacements.slice(1).forEach(r => {parent.insertBefore(r, sibling)});
       newHandles.push(handle);
       last = replacements[replacements.length - 1];
-    } else if (isElement.tag === Fragment) {
+    } else if (isElement.tag === FRAGMENT_MARKER) {
       const handle = maybeCreateHandle(isElement);
       newHandles.push(handle);
       const placeholder = new Text('');
@@ -487,7 +487,7 @@ function patchChildren(
 }
 
 function patchNode(physical: PhysicalElement, to: VElement): Node|undefined {
-  checkArgument(to.tag !== Fragment, 'patchNode cannot patch fragments');
+  checkArgument(to.tag !== FRAGMENT_MARKER, 'patchNode cannot patch fragments');
   const self = checkExists(physical.self, 'patchNode cannot patch fragments');
 
   if (!(self instanceof Element) || to.tag !== self.tagName.toLowerCase()) {
@@ -654,14 +654,18 @@ function maybeCreateHandle(element: VElementOrPrimitive): Handle {
   }
 }
 
-function wrap(element: VElementOrPrimitive): VElement {
+export function Fragment({children}: {children: VElementOrPrimitive[]}): VElement {
   return {
-    tag: Fragment,
-    children: [element],
+    tag: FRAGMENT_MARKER,
+    children,
     childTrace: [],
     handle: createHandle(),
     factorySource: undefined,
     props: {},
   };
+}
+
+function wrap(element: VElementOrPrimitive): VElement {
+  return Fragment({children: [element]});
 }
 

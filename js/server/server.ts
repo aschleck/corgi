@@ -5,8 +5,8 @@ import { fastifyRequestContextPlugin, requestContext } from '@fastify/request-co
 import { checkExists } from '../common/asserts';
 import { deepEqual } from '../common/comparisons';
 import { Future, resolvedFuture, unsettledFuture } from '../common/futures';
-import { Fragment, Properties, VElementOrPrimitive, vdomCaching } from '../corgi';
-import { ElementFactory, canonicalize } from '../corgi/vdom';
+import { Properties, VElementOrPrimitive, vdomCaching } from '../corgi';
+import { ElementFactory, FRAGMENT_MARKER, canonicalize } from '../corgi/vdom';
 
 import { DataKey } from './ssr_aware';
 
@@ -196,7 +196,7 @@ function render(element: VElementOrPrimitive): string {
   if (element instanceof Object) {
     const properties = renderProperties(element.props);
     const spaceProperties = properties ? ` ${properties}` : '';
-    if (element.tag === Fragment) {
+    if (element.tag === FRAGMENT_MARKER) {
       const children = element.children.map(render);
       return children.join('');
     } else if (element.children) {
