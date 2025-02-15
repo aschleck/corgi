@@ -88,7 +88,7 @@ function Dialog(
       </div>
       <div
           className={
-            `absolute max-h-[90vh] max-w-[90vw] left-1/2 top-1/2 transform `
+            `absolute max-h-[90vh] max-w-[90vw] left-1/2 overflow-y-auto top-1/2 transform `
                 + `-translate-x-1/2 -translate-y-1/2`
           }
       >
