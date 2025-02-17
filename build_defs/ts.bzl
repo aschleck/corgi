@@ -49,9 +49,9 @@ def esbuild_binary(
             "tailwind.theme.mjs",
         ],
         deps = [
+            "//:node_modules/@tailwindcss/postcss",
             "//:node_modules/autoprefixer",
             "//:node_modules/postcss",
-            "//:node_modules/tailwindcss",
             "@dev_april_corgi//third_party/deanc-esbuild-plugin-postcss",
         ],
     )
@@ -163,7 +163,7 @@ def ts_project(name, srcs, deps = None, **kwargs):
             "//:package_json",
         ],
         allow_js = True,
-        declaration = True,
+        composite = True,
         deps = deps or [],
         srcs = srcs,
         transpiler = "tsc",

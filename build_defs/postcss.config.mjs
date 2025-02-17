@@ -1,6 +1,6 @@
 import autoprefixer from 'autoprefixer';
 import path from 'path';
-import tailwindcss from 'tailwindcss';
+import tailwindcss from '@tailwindcss/postcss';
 import {fileURLToPath} from 'url';
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
