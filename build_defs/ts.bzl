@@ -113,9 +113,7 @@ def c_ts_project(
 
     ts_project(
         name = name,
-        srcs = srcs + [
-            "//:package_json",
-        ],
+        srcs = srcs,
         data = data,
         deps = deps,
         testonly = testonly,
@@ -161,7 +159,9 @@ def c_ts_project(
 def ts_project(name, srcs, deps = None, **kwargs):
     _ts_project(
         name = name,
-        assets = srcs,
+        assets = srcs + [
+            "//:package_json",
+        ],
         allow_js = True,
         declaration = True,
         deps = deps or [],
