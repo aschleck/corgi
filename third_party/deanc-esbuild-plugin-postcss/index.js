@@ -1,5 +1,4 @@
 import * as fs from "node:fs/promises";
-import * as util from "node:util";
 import * as path from "node:path";
 import postcss from "postcss";
 

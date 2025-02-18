@@ -45,39 +45,30 @@ def esbuild_binary(
         name = name + "_esbuild_config",
         srcs = [
             ":" + name + "_esbuild_config_copy",
-            ":" + name + "_tailwind_config",
-            "tailwind.theme.mjs",
+            ":" + name + "_postcss_config",
         ],
         deps = [
-            "//:node_modules/@tailwindcss/postcss",
-            "//:node_modules/autoprefixer",
+            "//:node_modules/@tailwindcss/node",
+            "//:node_modules/@tailwindcss/oxide",
+            "//:node_modules/lightningcss",
             "//:node_modules/postcss",
             "@dev_april_corgi//third_party/deanc-esbuild-plugin-postcss",
         ],
     )
 
-    if len(native.glob(["tailwind.theme.mjs"], allow_empty=True)) == 0:
-        native.genrule(
-            name = name + "_tailwind_theme",
-            outs = ["tailwind.theme.mjs"],
-            cmd = "echo 'export default {};' > $@",
-        )
-
     _expand_tailwind_config(
-        name = name + "_tailwind_config",
+        name = name + "_postcss_config",
         deps = deps,
-        output = name + "/tailwind.config.mjs",
-        template = "@dev_april_corgi//build_defs:tailwind.config.mjs",
+        output = name + "/postcss.config.mjs",
+        template = "@dev_april_corgi//build_defs:postcss.config.mjs",
     )
 
     native.genrule(
         name = name + "_esbuild_config_copy",
         srcs = [
-            "tailwind.theme.mjs",
             "@dev_april_corgi//build_defs:esbuild_browser_config.js",
             "@dev_april_corgi//build_defs:esbuild_node_config.js",
             "@dev_april_corgi//build_defs:esbuild_cjs_inject.js",
-            "@dev_april_corgi//build_defs:postcss.config.mjs",
             "@dev_april_corgi//third_party/deanc-esbuild-plugin-postcss:index.js",
         ],
         outs = [
@@ -85,8 +76,6 @@ def esbuild_binary(
             name + "/esbuild_cjs_inject.js",
             name + "/esbuild_node_config.js",
             name + "/index.js",
-            name + "/postcss.config.mjs",
-            name + "/tailwind.theme.mjs",
         ],
         cmd = "\n".join([
             "mkdir -p \"$(@D)/" + name + "\"",
