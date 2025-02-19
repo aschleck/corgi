@@ -14,7 +14,7 @@ export const plugins = [
 function tailwindcss() {
   const files = [
     {FILES_TO_SEARCH}
-  ].map(f => path.join(process.cwd(), f));
+  ];
 
   return {
     postcssPlugin: 'corgi-tailwindcss',

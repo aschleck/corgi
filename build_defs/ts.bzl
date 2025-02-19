@@ -8,7 +8,6 @@ load("@aspect_rules_ts//ts:defs.bzl", _ts_project = "ts_project")
 def esbuild_binary(
             name,
             entry_point = None,
-            css_deps = None,
             deps = None,
             platform = "browser",
             minify = True,
@@ -16,8 +15,6 @@ def esbuild_binary(
     has_css = len(native.glob(["*.css"], allow_empty=True)) > 0
     esbuild(
         name = name,
-        # Some problem with the bazel-sandbox plugin not finding app.css
-        bazel_sandbox_plugin = False,
         config = ":" + name + (
             "/esbuild_browser_config.js" if platform == "browser" else "/esbuild_node_config.js"
         ),
@@ -29,7 +26,7 @@ def esbuild_binary(
         define = {
             "process.env.CORGI_FOR_BROWSER": "true" if platform == "browser" else "false",
         },
-        deps = (css_deps or []) + (deps or []) + [
+        deps = (deps or []) + [
             ":" + name + "_esbuild_config",
             "@dev_april_corgi//third_party/deanc-esbuild-plugin-postcss",
         ],
@@ -52,6 +49,7 @@ def esbuild_binary(
             "//:node_modules/@tailwindcss/oxide",
             "//:node_modules/lightningcss",
             "//:node_modules/postcss",
+            "//:node_modules/supports-color",
             "@dev_april_corgi//third_party/deanc-esbuild-plugin-postcss",
         ],
     )
@@ -112,7 +110,9 @@ def c_ts_project(
         js_library(
             name = "css",
             srcs = native.glob(["*.css"]),
-            deps = css_deps or [],
+            deps = (css_deps or []) + [
+                "//:node_modules/tailwindcss",
+            ],
             testonly = testonly,
         )
     else:
