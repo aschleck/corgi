@@ -2,6 +2,14 @@ export function approxEqual(a: number, b: number, epsilon: number): boolean {
   return Math.abs(a - b) < epsilon;
 }
 
+export function approxGtOrEqual(a: number, b: number, epsilon: number): boolean {
+  return a > b || approxEqual(a, b, epsilon);
+}
+
+export function approxLtOrEqual(a: number, b: number, epsilon: number): boolean {
+  return a < b || approxEqual(a, b, epsilon);
+}
+
 export function deepEqual(a: unknown|undefined, b: unknown|undefined): boolean {
   // We need to be careful not to compare objects that reference themselves recursively forever
   const recursiveCache = new WeakMap<object, object>();
