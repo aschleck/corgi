@@ -151,7 +151,12 @@ export function hydrateElement(parent: Element, to: VElementOrPrimitive): void {
     parent.appendChild(new Text(''));
   }
 
-  hydrateElementRecursively(to, maybeCreateHandle(to), parent, /** left= */ undefined);
+  try {
+    hydrateElementRecursively(to, maybeCreateHandle(to), parent, /** left= */ undefined);
+  } catch (e: unknown) {
+    console.error('Error while hydrating page');
+    throw e;
+  }
 }
 
 function hydrateElementRecursively(
