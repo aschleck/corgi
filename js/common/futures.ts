@@ -7,6 +7,7 @@ export interface Future<T> extends Promise<T> {
     onResolved?: ((v: T) => TResult1 | PromiseLike<TResult1>) | null | undefined,
     onRejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null | undefined,
   ): Future<TResult1>;
+  error: () => unknown;
   value: () => T;
 }
 
@@ -15,45 +16,82 @@ export function asFuture<T>(p: Promise<T>): Future<T> {
     p.then(v => {
       f.finished = true;
       f.ok = true;
+      f.error = () => { throw "Future settled successfully"; };
       f.value = () => v;
       resolve(v);
     }).catch(e => {
       f.finished = true;
       f.ok = false;
-      f.value = () => {
-        throw e;
-      };
+      f.error = () => e;
+      f.value = () => { throw e; };
       reject(e);
     });
   }) as Future<T>;
 
   f.finished = false;
   f.ok = false;
+  f.error = () => {
+    throw new Error("Future hasn't yet settled");
+  };
   f.value = () => {
     throw new Error("Future hasn't yet settled");
   };
-  f.catch = function<TResult>(fn: ((reason: unknown) => TResult | PromiseLike<TResult>) | null | undefined) {
-    return asFuture(p.catch(fn));
+  f.catch = function<TResult>(
+    onRejected: ((reason: unknown) => TResult | PromiseLike<TResult>) | null | undefined
+  ) {
+    if (this.finished && onRejected) {
+      if (this.ok) {
+        return this;
+      } else {
+        const result = onRejected(this.error());
+        if (result instanceof Promise) {
+          const maybeFuture = result as Future<any>|Promise<any>;
+          if ('error' in maybeFuture) {
+            return maybeFuture;
+          } else {
+            return asFuture(result);
+          }
+        } else {
+          return rejectedFuture(result);
+        }
+      }
+    } else {
+      return asFuture(p.catch(onRejected));
+    }
   };
   f.finally = function(fn) {
     return asFuture(p.finally(fn));
   };
   f.then = function(onResolved, onRejected) {
     if (this.finished && this.ok && onResolved) {
-      const result = onResolved(this.value());
-      if (result instanceof Promise) {
-        const maybeFuture = result as Future<any>|Promise<any>;
-        if ('value' in maybeFuture) {
-          return maybeFuture;
+      if (this.ok && onResolved) {
+        const result = onResolved(this.value());
+        if (result instanceof Promise) {
+          const maybeFuture = result as Future<any>|Promise<any>;
+          if ('value' in maybeFuture) {
+            return maybeFuture;
+          } else {
+            return asFuture(result);
+          }
         } else {
-          return asFuture(result);
+          return resolvedFuture(result);
         }
-      } else {
-        return resolvedFuture(result);
+      } else if (!this.ok && onRejected) {
+        const result = onRejected(this.error());
+        if (result instanceof Promise) {
+          const maybeFuture = result as Future<any>|Promise<any>;
+          if ('error' in maybeFuture) {
+            return maybeFuture;
+          } else {
+            return asFuture(result);
+          }
+        } else {
+          return rejectedFuture(result);
+        }
       }
-    } else {
-      return asFuture(p.then(onResolved, onRejected));
     }
+
+    return asFuture(p.then(onResolved, onRejected));
   };
 
   return f;
@@ -64,7 +102,18 @@ export function resolvedFuture<T>(value: T): Future<T> {
   // Ensure these are set *now*
   f.finished = true;
   f.ok = true;
+  f.error = () => { throw "Future settled successfully"; };
   f.value = () => value;
+  return f;
+}
+
+export function rejectedFuture<T>(reason: unknown): Future<T> {
+  const f = asFuture<T>(Promise.reject(reason));
+  // Ensure these are set *now*
+  f.finished = true;
+  f.ok = false;
+  f.error = () => reason;
+  f.value = () => { throw reason; };
   return f;
 }
 
