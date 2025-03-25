@@ -1,3 +1,9 @@
+/*
+ * A future is a promise that allows checking if it's complete and its result.
+ *
+ * * Futures *never* trigger uncaught warnings.
+ * * Resolved/rejected futures chain immediately without requiring extra ticks to settle
+ */
 export interface Future<T> extends Promise<T> {
   finished: boolean;
   ok: boolean;
@@ -28,6 +34,11 @@ export function asFuture<T>(p: Promise<T>): Future<T> {
     });
   }) as Future<T>;
 
+  // Set up a no-op rejection handler so that NodeJS does not kill the process if this future
+  // rejects prior to being awaited. Otherwise every use of futures where failure is possible needs
+  // to add `.catch(() => {})` to avoid certain termination.
+  f.catch(() => {});
+
   f.finished = false;
   f.ok = false;
   f.error = () => {
@@ -43,16 +54,20 @@ export function asFuture<T>(p: Promise<T>): Future<T> {
       if (this.ok) {
         return this;
       } else {
-        const result = onRejected(this.error());
-        if (result instanceof Promise) {
-          const maybeFuture = result as Future<any>|Promise<any>;
-          if ('error' in maybeFuture) {
-            return maybeFuture;
+        try {
+          const result = onRejected(this.error());
+          if (result instanceof Promise) {
+            const maybeFuture = result as Future<any>|Promise<any>;
+            if ('error' in maybeFuture) {
+              return maybeFuture;
+            } else {
+              return asFuture(result);
+            }
           } else {
-            return asFuture(result);
+            return resolvedFuture(result);
           }
-        } else {
-          return rejectedFuture(result);
+        } catch (e: unknown) {
+          return rejectedFuture(e);
         }
       }
     } else {
@@ -77,16 +92,20 @@ export function asFuture<T>(p: Promise<T>): Future<T> {
           return resolvedFuture(result);
         }
       } else if (!this.ok && onRejected) {
-        const result = onRejected(this.error());
-        if (result instanceof Promise) {
-          const maybeFuture = result as Future<any>|Promise<any>;
-          if ('error' in maybeFuture) {
-            return maybeFuture;
+        try {
+          const result = onRejected(this.error());
+          if (result instanceof Promise) {
+            const maybeFuture = result as Future<any>|Promise<any>;
+            if ('error' in maybeFuture) {
+              return maybeFuture;
+            } else {
+              return asFuture(result);
+            }
           } else {
-            return asFuture(result);
+            return resolvedFuture(result);
           }
-        } else {
-          return rejectedFuture(result);
+        } catch (e: unknown) {
+          return rejectedFuture(e);
         }
       }
     }
