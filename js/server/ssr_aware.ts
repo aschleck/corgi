@@ -17,6 +17,7 @@ declare global {
       requestDataBatch(keys: DataKey[]): Future<object[]>;
       language(): string;
       redirectTo(url: string): void;
+      setStatusCode(statusCode: number): void;
       setTitle(title: string): void;
     };
   }
@@ -70,6 +71,12 @@ export function redirectTo(url: string): void {
     });
   } else {
     checkExists(window.SERVER_SIDE_RENDER).redirectTo(url);
+  }
+}
+
+export function setStatusCode(statusCode: number): void {
+  if (!process.env.CORGI_FOR_BROWSER) {
+    checkExists(window.SERVER_SIDE_RENDER).setStatusCode(statusCode);
   }
 }
 

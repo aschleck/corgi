@@ -16,6 +16,7 @@ declare module '@fastify/request-context' {
     requestDataBatch: (keys: DataKey[]) => Future<object[]>;
     language: string|undefined;
     redirectTo: string;
+    statusCode: number;
     title: string;
     url: string;
   }
@@ -43,6 +44,9 @@ global.window = {
     },
     redirectTo: function(url: string) {
       requestContext.set('redirectTo', url);
+    },
+    setStatusCode: function(statusCode: number) {
+      requestContext.set('statusCode', statusCode);
     },
     setTitle: function(title: string) {
       requestContext.set('title', title);
@@ -180,7 +184,8 @@ export async function serve(
     if (ifNoneMatch === etag || ifNoneMatch === `W/${etag}`) {
       reply.code(304);
     } else {
-      reply.code(200).send(result);
+      const code = requestContext.get('statusCode') ?? 200;
+      reply.code(code).send(result);
     }
   });
 
