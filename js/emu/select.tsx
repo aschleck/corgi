@@ -31,7 +31,11 @@ export function Select(
             state: [state, updateState],
           })}
       >
-        {options.map(o => <option value={o.value} selected={o.selected}>{o.label}</option>)}
+        {
+          options.map(
+            o => <option value={o.value} selected={o.selected || undefined}>{o.label}</option>
+          )
+        }
       </select>
     </label>
   </>;

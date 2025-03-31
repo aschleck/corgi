@@ -109,7 +109,7 @@ export interface InputProperties extends Properties {
 }
 
 export interface OptionProperties extends Properties {
-  selected?: boolean;
+  selected?: true;
   value?: string;
 }
 
