@@ -1,9 +1,10 @@
 import * as corgi from '../corgi';
 
-export function IndeterminantCircular() {
-  return <>
+export function IndeterminantCircular({fill}: {fill?: `before:border-${string}`}) {
+  return (
     <div
-        className="
+        className={
+          `
             h-8
             relative
             text-3xl
@@ -11,22 +12,24 @@ export function IndeterminantCircular() {
             before:absolute
             before:animate-spin
             before:border-[0.1em]
-            before:border-white-opaque-250
+            ${fill ?? 'before:border-white-opaque-250'}
             before:border-b-transparent
             before:content-['']
             before:h-[1em]
             before:rounded-full
             before:w-[1em]
-        "
+        `
+      }
     >
     </div>
-  </>;
+  );
 }
 
-export function IndeterminantLinear() {
-  return <>
+export function IndeterminantLinear({fill}: {fill?: `before:bg-${string}`}) {
+  return (
     <div
-        className="
+      className={
+          `
             absolute
             h-1
             left-0
@@ -35,16 +38,17 @@ export function IndeterminantLinear() {
             top-0
             touch-none
             before:animate-slide
-            before:bg-gray-900
+            ${fill ?? 'before:bg-gray-900'}
             before:bottom-0
             before:content-['']
             before:left-0
             before:absolute
             before:top-0
             before:w-1/3
-        "
+        `
+      }
     >
     </div>
-  </>;
+  );
 }
 
