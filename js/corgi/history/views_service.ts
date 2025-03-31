@@ -72,9 +72,9 @@ export function matchPath<R>(path: string, routes: Partial<RouteMatchers<R>>):
   for (const [kind, regex] of Object.entries(routes)) {
     const match = (regex as RegExp).exec(path);
     if (match) {
-      const groups: {[key: string]: string} = {};
+      const groups: {[key: string]: string|undefined} = {};
       for (const [key, value] of Object.entries(match.groups ?? {})) {
-        groups[key] = decodeURIComponent(value);
+        groups[key] = value !== undefined ? decodeURIComponent(value) : undefined;
       }
       return {
         kind,
