@@ -31,6 +31,7 @@ function tailwindcss() {
             sources: files.map(f => ({
               base: path.dirname(f),
               pattern: path.basename(f),
+              negated: false,
             })),
           });
 
