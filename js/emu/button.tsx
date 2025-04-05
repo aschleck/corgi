@@ -8,7 +8,7 @@ export type ButtonProps = {
 } & corgi.ButtonProperties;
 
 export function Button(
-    {ariaLabel, children, className, ref, ...props}: ButtonProps,
+    {ariaLabel, children, className, ref, tabindex, ...props}: ButtonProps,
     state: State|undefined,
     updateState: (newState: State) => void) {
   if (!state) {
@@ -31,6 +31,7 @@ export function Button(
           })}
           ariaLabel={ariaLabel}
           className={'h-full max-w-full [text-align:inherit]' + (className ? ` ${className}` : '')}
+          tabindex={tabindex}
       >
         {children}
       </button>
@@ -39,7 +40,7 @@ export function Button(
 }
 
 export function Link(
-    {children, className, ref, ...props}: ButtonProps,
+    {children, className, ref, tabindex, ...props}: ButtonProps,
     state: State|undefined,
     updateState: (newState: State) => void) {
   if (!state) {
@@ -61,6 +62,7 @@ export function Link(
             state: [state, updateState],
           })}
           className={'cursor-pointer' + (className ? ` ${className}` : '')}
+          tabindex={tabindex}
       >
         {children}
       </a>
