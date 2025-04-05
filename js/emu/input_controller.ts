@@ -45,7 +45,11 @@ export class InputController extends Controller<Args, EmptyDeps, HTMLInputElemen
       this.trigger(ACTION, {});
     } else if (e.detail.key.startsWith('Arrow')) {
       this.trigger(PRESSED, {key: e.detail.key});
-    } else if (e.detail.key.length === 1 && this.value.indexOf(e.detail.key) < 0) {
+    } else if (
+      e.detail.key.length === 1
+        && this.value.indexOf(e.detail.key) < 0
+        && !e.detail.ctrlKey
+        && !e.detail.metaKey) {
       // There's a crazy bug that happens when the user types just as the element renders. We get a
       // keyUp event for a key but it does *not* show up on the element. I don't know where it goes
       // but we need it. We filter for key.length === 1 to avoid Backspace, Tab, Arrow, etc.
