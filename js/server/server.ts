@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { fastifyRequestContextPlugin, requestContext } from '@fastify/request-context';
+import { fastifyRequestContext, requestContext } from '@fastify/request-context';
 
 import { checkExists } from '../common/asserts';
 import { deepEqual } from '../common/comparisons';
@@ -77,7 +77,7 @@ export async function serve(
     logger: true,
   });
 
-  server.register(fastifyRequestContextPlugin);
+  server.register(fastifyRequestContext);
   server.decorateRequest('userId', '');
 
   if (initialize) {
