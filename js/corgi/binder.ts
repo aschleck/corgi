@@ -22,6 +22,7 @@ interface PropertyKeyToHandlerMap<C> {
   blur: AMethodOnWithParameters<C, [CustomEvent<FocusEvent>]>;
   change: AMethodOnWithParameters<C, [CustomEvent<Event>]>;
   click: AMethodOnWithParameters<C, [CustomEvent<MouseEvent>]>;
+  contextmenu: AMethodOnWithParameters<C, [CustomEvent<PointerEvent>]>;
   corgi: Array<[
     EventSpec<unknown>,
     AMethodOnWithParameters<C, [CustomEvent<unknown>]>,
