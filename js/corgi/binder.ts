@@ -1,6 +1,7 @@
 import { checkArgument, checkExists, checkExhaustive } from '../common/asserts';
 import { deepEqual } from '../common/comparisons';
 import { Disposable } from '../common/disposable';
+import { Future, asFuture, resolvedFuture } from '../common/futures';
 
 import { Controller, ControllerCtor, ControllerDeps, ControllerDepsMethod, Response as ControllerResponse } from './controller';
 import { elementFinder, parentFinder, QueryOne, SupportedElement } from './dom';
@@ -53,7 +54,7 @@ interface BoundController<C extends Controller<any, any, any, any>> {
   controller: ControllerCtor<C>;
   disposer: Disposable;
   events: Partial<PropertyKeyToHandlerMap<C>>;
-  instance?: Promise<C>;
+  instance?: Future<C>;
   key?: string; // controllers will only be reused if their keys match
   ref?: string;
   state: StateTuple<C['_S']>;
@@ -337,13 +338,13 @@ function bindEventListener(
 function maybeInstantiateAndCall<E extends SupportedElement, R>(
     root: E,
     spec: AnyBoundController,
-    fn: (controller: AnyBoundController) => R): Promise<R> {
+    fn: (controller: AnyBoundController) => R): Future<R> {
   if (!spec.instance) {
     let deps;
     if (spec.controller.deps) {
       deps = fetchControllerDeps(spec.controller.deps(), root);
     } else {
-      deps = Promise.resolve({});
+      deps = resolvedFuture({});
     }
 
     spec.instance = deps.then(d => {
@@ -419,7 +420,7 @@ interface AnyServiceCtor {
 const serviceSingletons = new Map<AnyServiceCtor, Promise<Service<any>>>();
 
 function fetchControllerDeps<D extends ControllerDeps>(
-    deps: DepsConstructorsFor<D>, root: SupportedElement): Promise<D> {
+    deps: DepsConstructorsFor<D>, root: SupportedElement): Future<D> {
   const response: D = {controllers: {}, controllerss: {}, services: {}} as D;
   const promises: Array<Promise<unknown>> = [];
 
@@ -475,7 +476,7 @@ function fetchControllerDeps<D extends ControllerDeps>(
         }));
   }
 
-  return Promise.all(promises)
+  return asFuture(Promise.all(promises))
       .then(() => fetchServiceDeps(deps))
       .then(sr => Object.assign(response, sr));
 }
@@ -492,7 +493,7 @@ function instantiateService(ctor: AnyServiceCtor): Promise<Service<any>> {
   return instance;
 }
 
-export function fetchServiceDeps<D extends ServiceDeps>(deps: DepsConstructorsFor<D>): Promise<D> {
+export function fetchServiceDeps<D extends ServiceDeps>(deps: DepsConstructorsFor<D>): Future<D> {
   const response = {services: {}} as D;
   const promises = [];
   for (const [key, untypedCtor] of Object.entries(deps.services ?? {})) {
@@ -507,7 +508,7 @@ export function fetchServiceDeps<D extends ServiceDeps>(deps: DepsConstructorsFo
       response.services[key] = instance;
     }));
   }
-  return Promise.all(promises).then(() => response);
+  return asFuture(Promise.all(promises)).then(() => response);
 }
 
 export function disposeBoundElementsIn(node: Node): void {

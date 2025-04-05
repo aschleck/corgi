@@ -1,9 +1,9 @@
 import { declareEvent } from '../corgi/events';
 
-export const ACTION = declareEvent<{}>('action');
-export const CHANGED = declareEvent<{value: string}>('changed');
-export const CLOSE = declareEvent<{kind: 'resolve' | 'reject'}>('close');
-export const FOCUSED = declareEvent<{}>('focused');
-export const PRESSED = declareEvent<{key: string}>('pressed');
-export const UNFOCUSED = declareEvent<{}>('unfocused');
+export const ACTION = declareEvent<{}>('emu.action');
+export const CHANGED = declareEvent<{value: string}>('emu.changed');
+export const CLOSE = declareEvent<{kind: 'resolve' | 'reject'}>('emu.close');
+export const FOCUSED = declareEvent<{}>('emu.focused');
+export const PRESSED = declareEvent<{key: string}>('emu.pressed');
+export const UNFOCUSED = declareEvent<{}>('emu.unfocused');
 

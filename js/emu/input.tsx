@@ -31,7 +31,7 @@ export function Input(
     state: State|undefined,
     updateState: (newState: State) => void) {
   if (!state) {
-    state = {managed: true};
+    state = {forcedValue: value, managed: true};
   }
 
   return <>
@@ -60,7 +60,7 @@ export function Input(
           name={name}
           placeholder={placeholder ?? ''}
           size={size}
-          value={forceValue || state.managed ? value : undefined}
+          value={forceValue ? value : state.managed ? state.forcedValue : undefined}
       />
       {inset ?? ''}
     </label>
