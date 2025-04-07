@@ -300,7 +300,17 @@ function bindEventListener(
       return;
     }
 
-    e.preventDefault();
+    // TODO(april): I am sure this breaks quite some stuff, but also I think it's directionally
+    // good. Fix this.
+    const role = (element.getAttribute('role') ?? '').toUpperCase();
+    if (
+      (element.tagName === 'A' && event === 'click')
+        || (element.tagName === 'BUTTON' || role === 'BUTTON')
+        || element.tagName === 'INPUT'
+        || element.tagName === 'TEXTAREA'
+    ) {
+      e.preventDefault();
+    }
     e.stopPropagation();
 
     if (!cached.root || !cached.spec) {

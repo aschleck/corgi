@@ -50,7 +50,7 @@ export function Input(
             events: {
               'focusin': 'focused',
               'focusout': 'unfocused',
-              'keyup': 'keyPressed',
+              'keyup': 'keyUp',
             },
             ref,
             state: [state, updateState],

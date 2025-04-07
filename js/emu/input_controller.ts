@@ -16,10 +16,12 @@ export interface State {
 export class InputController extends Controller<Args, EmptyDeps, HTMLInputElement, State> {
 
   private lastValue: string;
+  private metaCancelsNext: boolean;
 
   constructor(response: Response<InputController>) {
     super(response);
     this.lastValue = this.root.value;
+    this.metaCancelsNext = false;
 
     // In most cases this controller will wake up when the value changes, so root.value will already
     // be updated and we need to trigger a change.
@@ -40,7 +42,26 @@ export class InputController extends Controller<Args, EmptyDeps, HTMLInputElemen
     this.trigger(UNFOCUSED, {});
   }
 
-  async keyPressed(e: CorgiEvent<typeof DOM_KEYBOARD>): Promise<void> {
+  async keyUp(e: CorgiEvent<typeof DOM_KEYBOARD>): Promise<void> {
+    // Auto-complete fires keyup but it's not a KeyboardEvent and has no `key` property. Eject early
+    // since our typing is wrong
+    if (!e.detail.key) {
+      if (this.lastValue !== this.value) {
+        this.lastValue = this.value;
+        this.trigger(CHANGED, {value: this.value});
+      }
+      return;
+    }
+
+    // If the user presses meta+A and then releases meta we get a meta up, then when they release A
+    // we get an A event. So cancel it.
+    if (e.detail.key === 'Meta') {
+      this.metaCancelsNext = true;
+    } else if (this.metaCancelsNext) {
+      this.metaCancelsNext = false;
+      return;
+    }
+
     if (e.detail.key === 'Enter') {
       this.trigger(ACTION, {});
     } else if (e.detail.key.startsWith('Arrow')) {
