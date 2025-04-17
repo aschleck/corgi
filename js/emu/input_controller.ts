@@ -16,12 +16,12 @@ export interface State {
 export class InputController extends Controller<Args, EmptyDeps, HTMLInputElement, State> {
 
   private lastValue: string;
-  private metaCancelsNext: boolean;
+  private nextCancelled: boolean;
 
   constructor(response: Response<InputController>) {
     super(response);
     this.lastValue = this.root.value;
-    this.metaCancelsNext = false;
+    this.nextCancelled = false;
 
     // In most cases this controller will wake up when the value changes, so root.value will already
     // be updated and we need to trigger a change.
@@ -55,10 +55,14 @@ export class InputController extends Controller<Args, EmptyDeps, HTMLInputElemen
 
     // If the user presses meta+A and then releases meta we get a meta up, then when they release A
     // we get an A event. So cancel it.
-    if (e.detail.key === 'Meta') {
-      this.metaCancelsNext = true;
-    } else if (this.metaCancelsNext) {
-      this.metaCancelsNext = false;
+    if (
+      e.detail.key === 'Alt'
+        || e.detail.key === 'Control'
+        || e.detail.key === 'Meta'
+        || e.detail.key === 'Shift') {
+      // Note that cancelling only means we prevent our weird appending logic below. So it's fine
+      // to leave this cancelled even if the next even comes minutes down the road.
+      this.nextCancelled = true;
       return;
     }
 
@@ -67,7 +71,8 @@ export class InputController extends Controller<Args, EmptyDeps, HTMLInputElemen
     } else if (e.detail.key.startsWith('Arrow')) {
       this.trigger(PRESSED, {key: e.detail.key});
     } else if (
-      e.detail.key.length === 1
+      !this.nextCancelled
+        && e.detail.key.length === 1
         && this.value.indexOf(e.detail.key) < 0
         && !e.detail.ctrlKey
         && !e.detail.metaKey) {
@@ -97,5 +102,7 @@ export class InputController extends Controller<Args, EmptyDeps, HTMLInputElemen
       }
       this.trigger(CHANGED, {value: this.value});
     }
+
+    this.nextCancelled = false;
   }
 }
