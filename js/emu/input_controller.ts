@@ -68,7 +68,7 @@ export class InputController extends Controller<Args, EmptyDeps, HTMLInputElemen
 
     if (e.detail.key === 'Enter') {
       this.trigger(ACTION, {});
-    } else if (e.detail.key.startsWith('Arrow')) {
+    } else if (e.detail.key.startsWith('Arrow') || e.detail.key === 'Escape') {
       this.trigger(PRESSED, {key: e.detail.key});
     } else if (
       !this.nextCancelled
