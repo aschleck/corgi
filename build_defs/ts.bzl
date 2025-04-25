@@ -89,6 +89,7 @@ def c_ts_project(
             css_deps = None,
             data = None,
             deps = None,
+            snapshots = None,
             test_deps = None,
             testonly = None,
         ):
@@ -139,6 +140,7 @@ def c_ts_project(
             config = "@dev_april_corgi//build_defs:jest_config",
             node_modules = "//:node_modules",
             node_options = ["--experimental-vm-modules"],
+            snapshots = snapshots,
             data = [
                 ":tests",
                 "//:tsconfig",
