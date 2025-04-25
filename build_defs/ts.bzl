@@ -140,7 +140,7 @@ def c_ts_project(
             config = "@dev_april_corgi//build_defs:jest_config",
             node_modules = "//:node_modules",
             node_options = ["--experimental-vm-modules"],
-            snapshots = snapshots,
+            snapshots = snapshots or native.glob(["__snapshots__/*.snap"], allow_empty=True),
             data = [
                 ":tests",
                 "//:tsconfig",
