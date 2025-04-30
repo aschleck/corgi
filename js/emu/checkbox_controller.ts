@@ -17,6 +17,10 @@ export class CheckboxController extends Controller<Args, EmptyDeps, HTMLInputEle
     super(response);
   }
 
+  get checked(): boolean {
+    return this.root.checked;
+  }
+
   clicked(): void {
     this.updateState({
       ...this.state,
