@@ -194,6 +194,7 @@ type TokenType =
       |'eof'
       |'list_delimeter'
       |'number'
+      |'percentage'
       |'rule'
       |'string'
       |'string_unquoted';
@@ -302,7 +303,13 @@ function nextToken(stream: CssStream): Token {
       return {type: 'string_unquoted', start, end: stream.position};
     }
 
-    return {type: 'number', start, end: stream.position};
+    if (stream.text[stream.position] === '%') {
+      stream.column += 1;
+      stream.position += 1;
+      return {type: 'percentage', start, end: stream.position};
+    } else {
+      return {type: 'number', start, end: stream.position};
+    }
   } else if ((stream.text[stream.position] >= 'a' && stream.text[stream.position] <= 'z')
       || stream.text[stream.position] === '-') {
     stream.column += 1;
