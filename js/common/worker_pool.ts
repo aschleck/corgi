@@ -7,7 +7,7 @@ export class WorkerPool<I, O> {
     this.workers = [];
     this.last = -1;
     for (let i = 0; i < count; ++i) {
-      this.workers.push(new Worker(url));
+      this.workers.push(new Worker(url, {type: 'module'}));
     }
   }
 
