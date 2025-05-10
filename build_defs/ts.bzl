@@ -11,6 +11,7 @@ def esbuild_binary(
             deps = None,
             platform = "browser",
             minify = True,
+            **kwargs,
         ):
     has_css = len(native.glob(["*.css"], allow_empty=True)) > 0
     esbuild(
@@ -36,6 +37,7 @@ def esbuild_binary(
         platform = platform,
         sources_content = True,
         target = "es2022",
+        **kwargs,
     )
 
     js_library(
