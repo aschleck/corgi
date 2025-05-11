@@ -42,7 +42,7 @@ export class InputController extends Controller<Args, EmptyDeps, HTMLInputElemen
     this.trigger(UNFOCUSED, {});
   }
 
-  async keyUp(e: CorgiEvent<typeof DOM_KEYBOARD>): Promise<void> {
+  keyUp(e: CorgiEvent<typeof DOM_KEYBOARD>): void {
     // Auto-complete fires keyup but it's not a KeyboardEvent and has no `key` property. Eject early
     // since our typing is wrong
     if (!e.detail.key) {
@@ -63,6 +63,7 @@ export class InputController extends Controller<Args, EmptyDeps, HTMLInputElemen
       // Note that cancelling only means we prevent our weird appending logic below. So it's fine
       // to leave this cancelled even if the next even comes minutes down the road.
       this.nextCancelled = true;
+      this.maybeTriggerChanged();
       return;
     }
 
@@ -91,7 +92,16 @@ export class InputController extends Controller<Args, EmptyDeps, HTMLInputElemen
         managed: true,
       });
     } else {
-      this.lastValue = this.value;
+      this.maybeTriggerChanged();
+    }
+
+    this.nextCancelled = false;
+  }
+
+  private maybeTriggerChanged(): void {
+    const oldValue = this.lastValue;
+    this.lastValue = this.value;
+    if (oldValue !== this.lastValue) {
       if (this.state.managed) {
         // We could await this but it doesn't really help us, it just delays the trigger and means
         // our parents have the wrong value for longer
@@ -102,7 +112,5 @@ export class InputController extends Controller<Args, EmptyDeps, HTMLInputElemen
       }
       this.trigger(CHANGED, {value: this.value});
     }
-
-    this.nextCancelled = false;
   }
 }

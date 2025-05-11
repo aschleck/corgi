@@ -22,6 +22,7 @@ export function qualifiedName<S>(spec: EventSpec<S>): string {
   return `corgi.${spec.name}`;
 }
 
+export const DOM_EVENT = declareEvent<Event>('corgi.domEvent');
 export const DOM_FOCUS = declareEvent<FocusEvent>('corgi.domFocus');
 export const DOM_INPUT = declareEvent<InputEvent>('corgi.domInput');
 export const DOM_KEYBOARD = declareEvent<KeyboardEvent>('corgi.domKeyboard');

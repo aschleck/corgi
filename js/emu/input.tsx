@@ -50,6 +50,9 @@ export function Input(
             events: {
               'focusin': 'focused',
               'focusout': 'unfocused',
+              // We use keyup because:
+              // * change is only fired when the user drops focus
+              // * keypress doesn't fire for cut or paste events
               'keyup': 'keyUp',
             },
             ref,

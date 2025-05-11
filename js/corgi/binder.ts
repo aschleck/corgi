@@ -31,6 +31,7 @@ interface PropertyKeyToHandlerMap<C> {
   focusin: AMethodOnWithParameters<C, [CustomEvent<FocusEvent>]>;
   focusout: AMethodOnWithParameters<C, [CustomEvent<FocusEvent>]>;
   keydown: AMethodOnWithParameters<C, [CustomEvent<KeyboardEvent>]>;
+  keypress: AMethodOnWithParameters<C, [CustomEvent<KeyboardEvent>]>;
   keyup: AMethodOnWithParameters<C, [CustomEvent<KeyboardEvent>]>;
   // This is wrong, it could also just be Event, but also I don't care
   input: AMethodOnWithParameters<C, [CustomEvent<InputEvent>]>;
