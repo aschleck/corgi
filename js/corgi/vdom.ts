@@ -81,8 +81,16 @@ export function createVirtualElement(
 
       creationTrace.push([]);
       lastCreationTrace.push([...physical.childTrace]);
-      const result = wrap(element({children: flatChildren, ...props}, newState, updateState));
-      lastCreationTrace.pop();
+      let result;
+      try {
+        result = wrap(element({children: flatChildren, ...props}, newState, updateState));
+      } catch (e: unknown) {
+        creationTrace.pop();
+        throw e;
+      } finally {
+        lastCreationTrace.pop();
+      }
+
       result.handle = handle;
       result.childTrace = checkExists(creationTrace.pop());
       result.factorySource = {
@@ -111,14 +119,20 @@ export function createVirtualElement(
     creationTrace[creationTrace.length - 1]?.push(handle);
 
     creationTrace.push([]);
-    const result =
-        wrap(
-            element({
-              children: flatChildren,
-              ...props,
-            },
-            state,
-            updateState));
+    let result;
+    try {
+      result =
+          wrap(
+              element({
+                children: flatChildren,
+                ...props,
+              },
+              state,
+              updateState));
+    } catch (e: unknown) {
+      creationTrace.pop();
+      throw e;
+    }
     result.childTrace = checkExists(creationTrace.pop());
     result.handle = handle;
     result.factorySource = {
