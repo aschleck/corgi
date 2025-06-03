@@ -42,7 +42,7 @@ export class QueuedWorkerPool<I, O> {
     this.workers = [];
 
     for (let i = 0; i < count; ++i) {
-      this.workers.push(new Worker(url));
+      this.workers.push(new Worker(url, {type: 'module'}));
     }
   }
 
