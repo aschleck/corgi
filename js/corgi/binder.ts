@@ -371,7 +371,13 @@ function maybeInstantiateAndCall<E extends SupportedElement, R>(
     });
   }
 
-  return spec.instance.then(instance => fn(instance));
+  return spec
+    .instance
+    .then(instance => fn(instance))
+    .catch(e => {
+      console.error(`Failed to construct controller ${spec.controller.name}`, e);
+      throw e;
+    });
 }
 
 function patchController(
