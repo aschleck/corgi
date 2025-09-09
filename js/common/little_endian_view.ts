@@ -38,8 +38,32 @@ export class LittleEndianView {
     return r;
   }
 
+  getInt16(): number {
+    const r = this.view.getInt16(this.position);
+    this.position += 2;
+    return r;
+  }
+
   getInt32(): number {
     const r = this.view.getInt32(this.position, /* littleEndian= */ true);
+    this.position += 4;
+    return r;
+  }
+
+  getUInt8(): number {
+    const r = this.view.getUint8(this.position);
+    this.position += 1;
+    return r;
+  }
+
+  getUInt16(): number {
+    const r = this.view.getUint16(this.position);
+    this.position += 2;
+    return r;
+  }
+
+  getUInt32(): number {
+    const r = this.view.getUint32(this.position, /* littleEndian= */ true);
     this.position += 4;
     return r;
   }
@@ -106,6 +130,12 @@ export class LittleEndianView {
     return r;
   }
 
+  sliceInt16(count: number): Int16Array {
+    const r = new Int16Array(this.buffer, this.position, count);
+    this.position += count * 2;
+    return r;
+  }
+
   sliceInt32(count: number): Int32Array {
     const r = new Int32Array(this.buffer, this.position, count);
     this.position += count * 4;
@@ -115,6 +145,18 @@ export class LittleEndianView {
   sliceUint8(count: number): Uint8Array {
     const r = new Uint8Array(this.buffer, this.position, count);
     this.position += count;
+    return r;
+  }
+
+  sliceUint16(count: number): Uint16Array {
+    const r = new Uint16Array(this.buffer, this.position, count);
+    this.position += count * 2;
+    return r;
+  }
+
+  sliceUint32(count: number): Uint32Array {
+    const r = new Uint32Array(this.buffer, this.position, count);
+    this.position += count * 4;
     return r;
   }
 
