@@ -1,7 +1,7 @@
 export class LittleEndianView {
 
   private readonly view: DataView;
-  private readonly limit: number;
+  readonly limit: number;
   position: number;
 
   constructor(private readonly buffer: ArrayBuffer, position: number = 0, limit: number = -1) {
