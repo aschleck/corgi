@@ -62,6 +62,7 @@ export interface Properties {
   children?: unknown[],
   className?: string;
   data?: {[key: string]: boolean|number|string};
+  draggable?: boolean;
   js?: AnyBoundController;
   style?: string; // TODO(april): this is sad
   tabindex?: string;

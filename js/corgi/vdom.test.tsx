@@ -67,6 +67,12 @@ test('sets value on inputs', () => {
   expect((document.body.children[0] as HTMLInputElement).value).toBe('moo');
 });
 
+test('sets draggable correctly', () => {
+  corgi.appendElement(document.body, <div draggable={true} />);
+  expect(document.body.innerHTML).toBe('<div draggable="true"></div>');
+  expect((document.body.children[0] as HTMLElement).draggable).toBe(true);
+});
+
 test('merges fragments', () => {
   corgi.appendElement(
       document.body,

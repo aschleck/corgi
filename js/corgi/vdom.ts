@@ -587,6 +587,8 @@ function patchProperties(element: Element, from: AnyProperties, to: AnyPropertie
         } else if (typeof value === 'boolean') {
           if (canonical === 'checked') {
             (element as HTMLInputElement).checked = value;
+          } else if (canonical === 'draggable') {
+            (element as HTMLElement).draggable = value;
           } else if (value) {
             element.setAttribute(canonical, '');
           } else {
