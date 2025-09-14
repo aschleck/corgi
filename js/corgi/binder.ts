@@ -27,6 +27,13 @@ interface PropertyKeyToHandlerMap<C> {
     EventSpec<unknown>,
     AMethodOnWithParameters<C, [CustomEvent<unknown>]>,
   ]>;
+  drag: AMethodOnWithParameters<C, [CustomEvent<DragEvent>]>;
+  dragend: AMethodOnWithParameters<C, [CustomEvent<DragEvent>]>;
+  dragenter: AMethodOnWithParameters<C, [CustomEvent<DragEvent>]>;
+  dragleave: AMethodOnWithParameters<C, [CustomEvent<DragEvent>]>;
+  dragover: AMethodOnWithParameters<C, [CustomEvent<DragEvent>]>;
+  dragstart: AMethodOnWithParameters<C, [CustomEvent<DragEvent>]>;
+  drop: AMethodOnWithParameters<C, [CustomEvent<DragEvent>]>;
   focus: AMethodOnWithParameters<C, [CustomEvent<FocusEvent>]>;
   focusin: AMethodOnWithParameters<C, [CustomEvent<FocusEvent>]>;
   focusout: AMethodOnWithParameters<C, [CustomEvent<FocusEvent>]>;
