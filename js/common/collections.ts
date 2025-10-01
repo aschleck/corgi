@@ -51,9 +51,12 @@ export class HashMap<K, V> {
   private readonly _keys: Map<unknown, K>;
   private readonly mapped: Map<unknown, V>;
 
-  constructor(private readonly hashFn: (key: K) => unknown) {
+  constructor(private readonly hashFn: (key: K) => unknown, elements?: Array<[K, V]>) {
     this._keys = new Map();
     this.mapped = new Map();
+    for (const [key, value] of elements ?? []) {
+      this.set(key, value);
+    }
   }
 
   get size(): number {
