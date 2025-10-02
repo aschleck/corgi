@@ -224,16 +224,22 @@ export class IdentitySetMultiMap<K, V> {
   }
 }
 
-export function getFirstElement<V>(iterable: Iterable<V>): V {
+export function getFirstElement<V>(iterable: Iterable<V>, message?: string): V {
   for (const e of iterable) {
     return e;
   }
-  throw new Error('Iterable has no elements');
+  throw new Error(message ?? 'Iterable has no elements');
 }
 
-export function getOnlyElement<V>(c: Iterable<V>): V {
-  for (const v of c) {
-    return v;
+export function getOnlyElement<V>(c: Iterable<V>, message?: string): V {
+  const iterator = c[Symbol.iterator]();
+  const first = iterator.next();
+  if (first.done) {
+    throw new Error(message ?? 'Expected exactly one element, but iterable was empty');
   }
-  throw new Error('Given iterable is empty');
+  const second = iterator.next();
+  if (!second.done) {
+    throw new Error(message ?? 'Expected exactly one element, but iterable had multiple elements');
+  }
+  return first.value;
 }
