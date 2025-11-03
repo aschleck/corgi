@@ -17,7 +17,7 @@ export class HistoryService extends Service<EmptyDeps> {
     super(response);
     this.listeners = new Set();
 
-    window.addEventListener('click', (e: MouseEvent) => {
+    this.registerListener(window, 'click', (e: MouseEvent) => {
       let cursor: Element|null = e.target as Element;
       while (cursor && cursor.tagName !== 'A') {
         cursor = cursor.parentElement;
@@ -31,7 +31,7 @@ export class HistoryService extends Service<EmptyDeps> {
         }
       }
     });
-    window.addEventListener('popstate', (e: PopStateEvent) => {
+    this.registerListener(window, 'popstate', (e: PopStateEvent) => {
       this.notifyListeners();
     });
   }

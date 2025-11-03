@@ -1,3 +1,4 @@
+import { Disposable } from '../common/disposable';
 import { DepsConstructed, DepsConstructorsFor } from './types';
 
 export interface ServiceDeps {
@@ -14,7 +15,9 @@ export interface ServiceResponse<D extends ServiceDepsMethod> {
   deps: DepsConstructed<ReturnType<D>>;
 }
 
-export class Service<D extends ServiceDepsMethod> {
+export class Service<D extends ServiceDepsMethod> extends Disposable {
 
-  constructor(response: ServiceResponse<D>) {}
+  constructor(response: ServiceResponse<D>) {
+    super();
+  }
 }
