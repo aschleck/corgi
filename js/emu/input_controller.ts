@@ -16,12 +16,10 @@ export interface State {
 export class InputController extends Controller<Args, EmptyDeps, HTMLInputElement, State> {
 
   private lastValue: string;
-  private nextCancelled: boolean;
 
   constructor(response: Response<InputController>) {
     super(response);
     this.lastValue = this.root.value;
-    this.nextCancelled = false;
 
     // In most cases this controller will wake up when the value changes, so root.value will already
     // be updated and we need to trigger a change.
@@ -42,60 +40,26 @@ export class InputController extends Controller<Args, EmptyDeps, HTMLInputElemen
     this.trigger(UNFOCUSED, {});
   }
 
+  inputChanged(): void {
+    this.maybeTriggerChanged();
+  }
+
   keyUp(e: CorgiEvent<typeof DOM_KEYBOARD>): void {
     // Auto-complete fires keyup but it's not a KeyboardEvent and has no `key` property. Eject early
     // since our typing is wrong
     if (!e.detail.key) {
-      if (this.lastValue !== this.value) {
-        this.lastValue = this.value;
-        this.trigger(CHANGED, {value: this.value});
-      }
-      return;
-    }
-
-    // If the user presses meta+A and then releases meta we get a meta up, then when they release A
-    // we get an A event. So cancel it.
-    if (
-      e.detail.key === 'Alt'
-        || e.detail.key === 'Control'
-        || e.detail.key === 'Meta'
-        || e.detail.key === 'Shift') {
-      // Note that cancelling only means we prevent our weird appending logic below. So it's fine
-      // to leave this cancelled even if the next even comes minutes down the road.
-      this.nextCancelled = true;
       this.maybeTriggerChanged();
       return;
     }
 
+    // Handle special keys
     if (e.detail.key === 'Enter') {
       this.trigger(ACTION, {});
     } else if (e.detail.key.startsWith('Arrow') || e.detail.key === 'Escape') {
       this.trigger(PRESSED, {key: e.detail.key});
-    } else if (
-      !this.nextCancelled
-        && e.detail.key.length === 1
-        && this.value.indexOf(e.detail.key) < 0
-        && !e.detail.ctrlKey
-        && !e.detail.metaKey) {
-      // There's a crazy bug that happens when the user types just as the element renders. We get a
-      // keyUp event for a key but it does *not* show up on the element. I don't know where it goes
-      // but we need it. We filter for key.length === 1 to avoid Backspace, Tab, Arrow, etc.
-      //
-      // It's not clear to me that this works for IME keyboards but I don't have one.
-      //
-      // Note that appending it is a little sketchy (what if the users focus is at the start of the
-      // value) but given the situation is a brand new element with instant typing it is hard to
-      // imagine how the caret could be anywhere but at the end.
-      this.lastValue = this.lastValue + e.detail.key;
-      this.updateState({
-        forcedValue: this.lastValue,
-        managed: true,
-      });
-    } else {
-      this.maybeTriggerChanged();
     }
 
-    this.nextCancelled = false;
+    // No need to call maybeTriggerChanged because the inputChanged handler will already receive it
   }
 
   private maybeTriggerChanged(): void {

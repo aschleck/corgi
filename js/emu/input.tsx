@@ -50,9 +50,10 @@ export function Input(
             events: {
               'focusin': 'focused',
               'focusout': 'unfocused',
-              // We use keyup because:
-              // * change is only fired when the user drops focus
-              // * keypress doesn't fire for cut or paste events
+              // This fires for all types of input (typing, pasting, IME, etc.) and always reflects
+              // the actual DOM value.
+              'input': 'inputChanged',
+              // Monitor keyup for handling special keys (Enter, Arrow, Escape)
               'keyup': 'keyUp',
             },
             ref,
