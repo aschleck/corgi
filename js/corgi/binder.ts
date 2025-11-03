@@ -442,7 +442,9 @@ interface AnyServiceCtor {
   deps?(): DepsConstructorsFor<ServiceDeps>;
   new (response: any): Service<any>;
 }
-const serviceSingletons = new Map<AnyServiceCtor, Promise<Service<any>>>();
+
+export const serviceSingletons = new Map<AnyServiceCtor, Promise<Service<any>>>();
+
 
 function fetchControllerDeps<D extends ControllerDeps>(
     deps: DepsConstructorsFor<D>, root: SupportedElement): Future<D> {
