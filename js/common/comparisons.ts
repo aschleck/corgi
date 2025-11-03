@@ -11,6 +11,10 @@ export function approxLtOrEqual(a: number, b: number, epsilon: number): boolean 
 }
 
 export function deepEqual(a: unknown|undefined, b: unknown|undefined): boolean {
+  if (a === b) {
+    return true;
+  }
+
   // We need to be careful not to compare objects that reference themselves recursively forever
   const recursiveCache = new WeakMap<object, object>();
   return realDeepEqual(a, b, recursiveCache);
