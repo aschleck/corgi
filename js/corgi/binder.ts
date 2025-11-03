@@ -330,7 +330,7 @@ function bindEventListener(
       if (!root) {
         throw new Error(`Unable to find controller for event ${event}`);
       }
-      const spec = checkExists(elementsToControllerSpecs.get(root))
+      const spec = checkExists(elementsToControllerSpecs.get(root));
       spec.disposer.registerDisposer(() => {
         cached.root = undefined;
         cached.spec = undefined;
@@ -344,7 +344,8 @@ function bindEventListener(
 
     maybeInstantiateAndCall(root, spec, (controller: any) => {
       const method = controller[handler] as (e: any) => unknown;
-      checkExists(method, `Cannot find method ${handler} on ${controller.constructor.name}`)
+      checkExists(
+        method, `Cannot find method '${handler}' on controller ${controller.constructor.name}`)
           .call(controller, {
             actionElement: new QueryOne(element),
             targetElement: new QueryOne(e.target as SupportedElement),
@@ -461,9 +462,9 @@ function fetchControllerDeps<D extends ControllerDeps>(
             candidate => candidate.getAttribute('data-js-ref') === key,
             parent => !parent.hasAttribute('data-js'));
     if (elements.length > 1) {
-      throw new Error(`Key ${key} matched multiple controllers`);
+      throw new Error(`Dependency key '${key}' matched ${elements.length} controllers`);
     } else if (elements.length === 0) {
-      throw new Error(`Key ${key} did not match any controllers`);
+      throw new Error(`Dependency key '${key}' did not match any controllers`);
     }
 
     const element = elements[0];
@@ -471,7 +472,10 @@ function fetchControllerDeps<D extends ControllerDeps>(
     promises.push(
         maybeInstantiateAndCall(element, spec, (controller: any) => {
           if (ctor !== controller.constructor) {
-            throw new Error(`Key ${key} matched a non-${ctor.name} controller`);
+            throw new Error(
+              `Dependency key '${key}' expected ${ctor.name} controller but found ` +
+                controller.constructor.name
+            );
           }
           response.controllers[key] = controller;
         }));
@@ -492,7 +496,10 @@ function fetchControllerDeps<D extends ControllerDeps>(
       instances.push(
           maybeInstantiateAndCall(element, spec, (controller: any) => {
             if (ctor !== controller.constructor) {
-              throw new Error(`Key ${key} matched a non-${ctor.name} controller`);
+              throw new Error(
+                `Dependency key '${key}' expected ${ctor.name} controller but found ` +
+                  controller.constructor.name
+              );
             }
             return controller;
           }));
