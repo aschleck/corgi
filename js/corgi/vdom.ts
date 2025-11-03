@@ -577,7 +577,22 @@ function patchProperties(element: Element, from: AnyProperties, to: AnyPropertie
         key === 'value'
           && (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)) {
         if (value !== undefined) { // don't clear value if we are no longer forcing it
-          element.value = String(value);
+          // Only overwrite the value if the element isn't currently focused. If it's focused, the
+          // user may be actively typing.
+          //
+          // There is an unfortunate edge case here: if some controller really wants to overwrite
+          // what the user typed, then we have no way to actually do it here. But in that case I
+          // think it's okay to make people drop down to raw DOM calls and
+          // * blur the element prior to changing its value
+          // * directly set element.value rather than asking Corgi to do it. Corgi wouldn't know
+          //   about the change and there might be consequences, but that seems acceptable.
+          if (document.activeElement !== element) {
+            // Only update if the value actually changed to avoid unnecessary DOM mutations
+            const newValue = String(value);
+            if (element.value !== newValue) {
+              element.value = newValue;
+            }
+          }
         }
       } else {
         const canonical = canonicalize(key);
