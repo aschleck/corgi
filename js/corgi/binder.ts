@@ -308,8 +308,9 @@ function bindEventListener(
       return;
     }
 
-    // TODO(april): I am sure this breaks quite some stuff, but also I think it's directionally
-    // good. Fix this.
+    // Ensure default behavior doesn't navigate us off the page or submit a form or something. We
+    // preventDefault on A+click here even though HistoryService will also call preventDefault
+    // because we don't want to require the user uses HistoryService.
     const role = (element.getAttribute('role') ?? '').toUpperCase();
     if (
       (element.tagName === 'A' && event === 'click')
