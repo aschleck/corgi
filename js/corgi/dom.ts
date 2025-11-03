@@ -38,9 +38,14 @@ export class Query {
 
   one(): QueryOne {
     if (this.frontier.length > 1) {
-      throw new Error('More than one element in query');
+      const tags = this.frontier.slice(0, 3).map(e => `<${e.tagName.toLowerCase()}>`).join(', ');
+      const more = this.frontier.length > 3 ? ` and ${this.frontier.length - 3} more` : '';
+      throw new Error(
+        `Expected exactly one element in query, but found ${this.frontier.length} elements: ` +
+          `${tags}${more}`
+      );
     } else if (this.frontier.length === 0) {
-      throw new Error('No elements in query');
+      throw new Error('No elements matched the query' );
     } else {
       return new QueryOne(this.frontier[0]);
     }
@@ -117,7 +122,9 @@ export class QueryOne extends Query {
     }
 
     if (!parent) {
-      throw new Error(`No parent element matches ${selector}`);
+      const elementTag = this.e.tagName.toLowerCase();
+      const selectorMsg = selector ? ` matching selector '${selector}'` : '';
+      throw new Error(`No parent element${selectorMsg} found for <${elementTag}>`);
     }
 
     return new QueryOne(parent);
