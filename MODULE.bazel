@@ -1,7 +1,7 @@
 module(name = "dev_april_corgi", version = "0.0.0", compatibility_level = 1)
 
 bazel_dep(name = "aspect_bazel_lib", version = "2.15.3")
-bazel_dep(name = "aspect_rules_esbuild", version = "0.21.0")
+bazel_dep(name = "aspect_rules_esbuild", version = "0.24.0")
 bazel_dep(name = "aspect_rules_jest", version = "0.22.0")
 bazel_dep(name = "aspect_rules_js", version = "2.3.7")
 bazel_dep(name = "rules_nodejs", version = "6.3.5")
