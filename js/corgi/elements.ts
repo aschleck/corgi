@@ -100,14 +100,51 @@ export interface ImageProperties extends Properties {
   width?: string;
 }
 
-export interface InputProperties extends Properties {
-  checked?: boolean;
+export interface BaseInputProperties extends Properties {
   name?: string;
   placeholder?: string;
   size?: number;
-  type?: 'checkbox'|'password'|'radio'|'text';
   value?: string;
 }
+
+export interface InputCheckboxProperties extends BaseInputProperties {
+  checked?: boolean;
+  type: 'checkbox';
+}
+
+export interface InputFileProperties extends BaseInputProperties {
+  accept?: string;
+  capture?: string;
+  multiple?: boolean;
+  type: 'file';
+}
+
+export interface InputNumberProperties extends BaseInputProperties {
+  max?: string;
+  min?: string;
+  step?: string;
+  type: 'number';
+}
+
+export interface InputOtherProperties extends BaseInputProperties {
+  name?: string;
+  placeholder?: string;
+  size?: number;
+  type?: 'password'|'radio'|'text';
+  value?: string;
+}
+
+export interface InputRadioProperties extends BaseInputProperties {
+  checked?: boolean;
+  type: 'radio';
+}
+
+export type InputProperties =
+  | InputCheckboxProperties
+  | InputFileProperties
+  | InputNumberProperties
+  | InputOtherProperties
+  | InputRadioProperties;
 
 export interface OptionProperties extends Properties {
   selected?: true;
