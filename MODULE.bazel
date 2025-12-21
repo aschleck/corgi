@@ -1,11 +1,17 @@
 module(name = "dev_april_corgi", version = "0.0.0", compatibility_level = 1)
 
-bazel_dep(name = "aspect_bazel_lib", version = "2.15.3")
-bazel_dep(name = "aspect_rules_esbuild", version = "0.24.0")
-bazel_dep(name = "aspect_rules_jest", version = "0.22.0")
-bazel_dep(name = "aspect_rules_js", version = "2.3.7")
+bazel_dep(name = "aspect_bazel_lib", version = "2.22.0")
+bazel_dep(name = "aspect_rules_esbuild", version = "0.25.0")
+bazel_dep(name = "aspect_rules_jest", version = "0.24.3")
+bazel_dep(name = "aspect_rules_js")
+archive_override(
+    module_name = "aspect_rules_js",
+    integrity = "sha256-c7x6B2Y8cGOLoo4yoGtEmiNyRe3DA2CmiDtqTfNB6tk=",
+    strip_prefix = "rules_js-c55b7cf8d653d90acb3ae437fb6aa47bb1465a61",
+    urls = ["https://github.com/aspect-build/rules_js/archive/c55b7cf8d653d90acb3ae437fb6aa47bb1465a61.tar.gz"],
+)
+bazel_dep(name = "aspect_rules_ts", version = "3.8.1")
 bazel_dep(name = "rules_nodejs", version = "6.3.5")
-bazel_dep(name = "aspect_rules_ts", version = "3.5.2")
 
 npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm", isolate = True)
 
