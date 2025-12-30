@@ -127,11 +127,7 @@ export interface InputNumberProperties extends BaseInputProperties {
 }
 
 export interface InputOtherProperties extends BaseInputProperties {
-  name?: string;
-  placeholder?: string;
-  size?: number;
-  type?: 'password'|'radio'|'text';
-  value?: string;
+  type?: 'password'|'text';
 }
 
 export interface InputRadioProperties extends BaseInputProperties {
