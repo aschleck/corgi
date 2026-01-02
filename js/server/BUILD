@@ -3,7 +3,6 @@ package(default_visibility = ["//visibility:public"])
 load("//build_defs:ts.bzl", "c_ts_project", "ts_project")
 
 CLIENT_FILES = [
-    "data.ts",
     "ssr_aware.ts",
 ]
 
@@ -27,6 +26,7 @@ ts_project(
     name = "client",
     srcs = CLIENT_FILES,
     deps = [
+        "//:node_modules/@bufbuild/protobuf",
         "//:node_modules/@types/node",
         "//js/common",
         "//js/corgi",

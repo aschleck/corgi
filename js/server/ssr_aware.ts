@@ -1,3 +1,5 @@
+import {JsonValue} from '@bufbuild/protobuf';
+
 import { checkExists } from '../common/asserts';
 import { Future, asFuture } from '../common/futures';
 import { fetchGlobalDeps } from '../corgi/deps';
@@ -5,16 +7,28 @@ import { HistoryService } from '../corgi/history/history_service';
 
 export interface DataKey {
   method: string;
-  request: object;
+  request: JsonValue;
 }
+
+interface Result {
+  kind: 'result';
+  value: JsonValue;
+}
+
+interface Error {
+  kind: 'error';
+  code: number;
+}
+
+export type ServerResponse = Result | Error;
 
 declare global {
   interface Window {
-    INITIAL_DATA?: Array<[key: DataKey, value: object]>;
+    INITIAL_DATA?: Array<[key: DataKey, value: ServerResponse]>;
     SERVER_SIDE_RENDER?: {
       cookies(): string;
       currentUrl(): string;
-      requestDataBatch(keys: DataKey[]): Future<object[]>;
+      requestDataBatch(keys: DataKey[]): Future<ServerResponse[]>;
       language(): string;
       redirectTo(url: string): void;
       setStatusCode(statusCode: number): void;
@@ -33,7 +47,7 @@ export function currentUrl(): URL {
   return new URL(url);
 }
 
-export function requestDataBatch(keys: DataKey[]): Future<object[]> {
+export function requestDataBatch(keys: DataKey[]): Future<ServerResponse[]> {
   if (process.env.CORGI_FOR_BROWSER) {
     const p = fetch('/api/data', {
       method: 'POST',
@@ -48,7 +62,7 @@ export function requestDataBatch(keys: DataKey[]): Future<object[]> {
   }
 }
 
-export function initialData(): Array<[key: DataKey, value: object]> {
+export function initialData(): Array<[key: DataKey, value: ServerResponse]> {
   return window.INITIAL_DATA ?? [];
 }
 
