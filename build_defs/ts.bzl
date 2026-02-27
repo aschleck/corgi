@@ -2,7 +2,7 @@ load("@aspect_bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 load("@aspect_rules_jest//jest:defs.bzl", "jest_test")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
-load("@aspect_rules_js//js:providers.bzl", "JsInfo")
+load("@aspect_rules_js//js:providers.bzl", "JsInfo", "js_info")
 load("@aspect_rules_ts//ts:defs.bzl", _ts_project = "ts_project")
 
 def esbuild_binary(
@@ -92,6 +92,7 @@ def c_ts_project(
             data = None,
             deps = None,
             snapshots = None,
+            test_data = None,
             test_deps = None,
             testonly = None,
         ):
@@ -107,6 +108,11 @@ def c_ts_project(
         data = data,
         deps = deps,
         testonly = testonly,
+    )
+
+    _collect_data(
+        name = name + "_data",
+        ts_project = ":" + name,
     )
 
     if len(native.glob(["*.css"], allow_empty=True)):
@@ -143,7 +149,7 @@ def c_ts_project(
             node_modules = "//:node_modules",
             node_options = ["--experimental-vm-modules"],
             snapshots = snapshots or native.glob(["__snapshots__/*.snap"], allow_empty=True),
-            data = [
+            data = (test_data or []) + [
                 ":tests",
                 "//:tsconfig",
             ],
@@ -163,6 +169,23 @@ def ts_project(name, srcs, deps = None, **kwargs):
         tsconfig = "//:tsconfig",
         **kwargs
     )
+
+def _collect_data_impl(ctx):
+    ts_target = ctx.attr.ts_project
+    data_files = [
+        f
+        for f in ts_target[DefaultInfo].default_runfiles.files.to_list()
+        if "/node_modules/" not in f.path
+            and f.extension not in ["js", "json", "jsx", "ts", "tsx"]
+    ]
+    return js_info(target = ts_target.label, transitive_sources = depset(data_files))
+
+_collect_data = rule(
+    implementation = _collect_data_impl,
+    attrs = {
+        "ts_project": attr.label(mandatory = True),
+    },
+)
 
 def _expand_tailwind_config_impl(ctx):
     sources = []
@@ -192,3 +215,4 @@ _expand_tailwind_config = rule(
         "output": attr.output(mandatory = True),
     }),
 )
+
