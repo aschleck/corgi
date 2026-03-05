@@ -19,6 +19,6 @@ export default {
     'node_modules',
   ],
   moduleNameMapper: {
-    '^external/(.*)': '<rootDir>/../$1', // picks up references to external repositories
+    '^(?:\/?)external/(.*)': '<rootDir>/../$1', // picks up references to external repositories
   },
 };
