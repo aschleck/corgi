@@ -299,6 +299,7 @@ const TAG_TO_NAMESPACE = new Map([
   ['rect', 'http://www.w3.org/2000/svg'],
   ['svg', 'http://www.w3.org/2000/svg'],
   ['text', 'http://www.w3.org/2000/svg'],
+  ['title', 'http://www.w3.org/2000/svg'],
 ]);
 
 const createdElements = new WeakMap<Handle, PhysicalElement>();

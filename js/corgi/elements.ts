@@ -50,6 +50,7 @@ declare global {
       th: Properties;
       thead: Properties;
       time: Properties;
+      title: Properties;
       tr: Properties;
       ul: Properties;
     }
@@ -77,6 +78,7 @@ interface SVGFilledProperties {
 
 interface SVGStrokedProperties {
   stroke?: string;
+  strokeDasharray?: string;
   strokeLinecap?: 'butt'|'round'|'square';
   strokeLinejoin?: 'arcs'|'bevel'|'miter'|'miter-clip'|'round';
   strokeMiterlimit?: number|string;
@@ -158,6 +160,7 @@ export interface TextAreaProperties extends Properties {
 }
 
 export interface SVGGraphicsProperties extends Properties {
+  opacity?: number|string;
   transform?: string;
   transformOrigin?: string;
   vectorEffect?: 'none'|'non-scaling-stroke'|'non-scaling-size'|'non-rotation'|'fixed-position';
