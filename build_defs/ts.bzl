@@ -94,12 +94,13 @@ def c_ts_project(
             snapshots = None,
             test_data = None,
             test_deps = None,
+            test_srcs = None,
             testonly = None,
         ):
     srcs = srcs or native.glob(
         ["*.ts", "*.tsx"],
         allow_empty=True,
-        exclude = ["*.test.ts", "*.test.tsx"]
+        exclude = test_srcs or ["*.test.ts", "*.test.tsx"]
     )
 
     ts_project(
@@ -131,10 +132,10 @@ def c_ts_project(
             testonly = testonly,
         )
 
-    if len(native.glob(["*.test.ts", "*.test.tsx"], allow_empty=True)):
+    if len(test_srcs or native.glob(["*.test.ts", "*.test.tsx"], allow_empty=True)):
         ts_project(
             name = "tests",
-            srcs = native.glob(["*.test.ts", "*.test.tsx"], allow_empty=True),
+            srcs = test_srcs or native.glob(["*.test.ts", "*.test.tsx"], allow_empty=True),
             testonly = True,
             deps = (test_deps or []) + [
                 ":%s" % name,
