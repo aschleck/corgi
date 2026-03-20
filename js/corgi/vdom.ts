@@ -662,7 +662,7 @@ function deepFlatten<V>(items: Array<V | V[]>): V[] {
   for (const item of items) {
     if (Array.isArray(item)) {
       flattened.push(...deepFlatten(item));
-    } else {
+    } else if (item !== undefined && item !== null && item !== false && item !== true) {
       flattened.push(item);
     }
   }
