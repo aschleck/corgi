@@ -49,7 +49,11 @@ def esbuild_binary(
         deps = [
             "//:node_modules/@tailwindcss/node",
             "//:node_modules/@tailwindcss/oxide",
+            "//:node_modules/@tailwindcss/oxide-darwin-arm64",
+            "//:node_modules/@tailwindcss/oxide-linux-x64-gnu",
             "//:node_modules/lightningcss",
+            "//:node_modules/lightningcss-darwin-arm64",
+            "//:node_modules/lightningcss-linux-x64-gnu",
             "//:node_modules/postcss",
             "//:node_modules/supports-color",
             "@dev_april_corgi//third_party/deanc-esbuild-plugin-postcss",
