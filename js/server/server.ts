@@ -1,5 +1,10 @@
 import crypto from 'crypto';
-import fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import fastify, {
+  FastifyInstance,
+  FastifyReply,
+  FastifyRequest,
+  FastifyServerOptions,
+} from 'fastify';
 import { fastifyRequestContext, requestContext } from '@fastify/request-context';
 
 import { checkExists } from '../common/asserts';
@@ -19,12 +24,6 @@ declare module '@fastify/request-context' {
     statusCode: number;
     title: string;
     url: string;
-  }
-}
-
-declare module 'fastify' {
-  interface FastifyRequest {
-    userId: string;
   }
 }
 
@@ -58,16 +57,17 @@ global.window = {
   },
 } as any;
 
-type PageFn = (content: string, title: string, escapedData: string) => string;
+export type PageFn = (content: string, title: string, escapedData: string) => string;
 
 vdomCaching.disable();
 
 export async function serve(
         app: ElementFactory,
         page: PageFn,
-        {dataServer, defaultTitle, initialize, host, port}: {
+        {dataServer, defaultTitle, fastifyOptions, initialize, host, port}: {
           dataServer?: string;
           defaultTitle: string;
+          fastifyOptions?: FastifyServerOptions;
           initialize?: (f: FastifyInstance) => Promise<void>,
           host?: string;
           port: number;
@@ -75,10 +75,10 @@ export async function serve(
     Promise<void> {
   const server = fastify({
     logger: true,
+    ...fastifyOptions,
   });
 
   server.register(fastifyRequestContext);
-  server.decorateRequest('userId', '');
 
   if (initialize) {
     await initialize(server);
@@ -91,7 +91,7 @@ export async function serve(
         (request.headers['accept-language'] ?? 'en-US')
             .split(';')[0]
             .split(',')[0]);
-    requestContext.set('url', `https://trailcatalog.org${request.url}`);
+    requestContext.set('url', `https://ssr.internal${request.url}`);
 
     const requestedData: Array<[DataKey, object]> = [];
     const missingData: DataKey[] = [];
