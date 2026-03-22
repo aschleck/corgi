@@ -1,11 +1,11 @@
-import crypto from 'crypto';
-import fastify, {
-  FastifyInstance,
-  FastifyReply,
-  FastifyRequest,
-  FastifyServerOptions,
-} from 'fastify';
+import crypto from 'node:crypto';
+import { Http2SecureServer } from 'node:http2';
 import { fastifyRequestContext, requestContext } from '@fastify/request-context';
+import fastify, {
+  FastifyHttp2Options,
+  FastifyHttp2SecureOptions,
+  FastifyInstance,
+} from 'fastify';
 
 import { checkExists } from '../common/asserts';
 import { deepEqual } from '../common/comparisons';
@@ -61,20 +61,21 @@ export type PageFn = (content: string, title: string, escapedData: string) => st
 
 vdomCaching.disable();
 
-export async function serve(
+export async function serve<Server extends Http2SecureServer>(
         app: ElementFactory,
         page: PageFn,
         {dataServer, defaultTitle, fastifyOptions, initialize, host, port}: {
           dataServer?: string;
           defaultTitle: string;
-          fastifyOptions?: FastifyServerOptions;
-          initialize?: (f: FastifyInstance) => Promise<void>,
+          fastifyOptions?: FastifyHttp2Options<Server> | FastifyHttp2SecureOptions<Server>;
+          initialize?: (f: FastifyInstance<Server>) => Promise<void>,
           host?: string;
           port: number;
         }):
     Promise<void> {
-  const server = fastify({
+  const server: FastifyInstance<Server> = fastify({
     logger: true,
+    http2: true,
     ...fastifyOptions,
   });
 
@@ -84,7 +85,7 @@ export async function serve(
     await initialize(server);
   }
 
-  server.get('/*', async (request: FastifyRequest, reply: FastifyReply) => {
+  server.get('/*', async (request, reply) => {
     requestContext.set('cookies', request.headers['cookie']);
     requestContext.set(
         'language',
@@ -96,7 +97,7 @@ export async function serve(
     const requestedData: Array<[DataKey, object]> = [];
     const missingData: DataKey[] = [];
     requestContext.set('requestDataBatch', (keys: DataKey[]) => {
-      const values = [];
+      const values: object[] = [];
       for (const key of keys) {
         let found = false;
         for (const [candidate, value] of requestedData) {
