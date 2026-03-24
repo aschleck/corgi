@@ -96,10 +96,11 @@ def c_ts_project(
             data = None,
             deps = None,
             snapshots = None,
+            tags = [],
             test_data = None,
             test_deps = None,
             test_srcs = None,
-            testonly = None,
+            testonly = False,
         ):
     srcs = srcs or native.glob(
         ["*.ts", "*.tsx"],
@@ -112,11 +113,14 @@ def c_ts_project(
         srcs = srcs,
         data = data,
         deps = deps,
+        tags = tags,
         testonly = testonly,
     )
 
     _collect_data(
         name = name + "_data",
+        tags = tags,
+        testonly = testonly,
         ts_project = ":" + name,
     )
 
@@ -127,12 +131,14 @@ def c_ts_project(
             deps = (css_deps or []) + [
                 "//:node_modules/tailwindcss",
             ],
+            tags = tags,
             testonly = testonly,
         )
     else:
         js_library(
             name = "css",
             deps = css_deps or [],
+            tags = tags,
             testonly = testonly,
         )
 
@@ -140,6 +146,7 @@ def c_ts_project(
         ts_project(
             name = "tests",
             srcs = test_srcs or native.glob(["*.test.ts", "*.test.tsx"], allow_empty=True),
+            tags = tags,
             testonly = True,
             deps = (test_deps or []) + [
                 ":%s" % name,
@@ -154,6 +161,7 @@ def c_ts_project(
             node_modules = "//:node_modules",
             node_options = ["--experimental-vm-modules"],
             snapshots = snapshots or native.glob(["__snapshots__/*.snap"], allow_empty=True),
+            tags = tags,
             data = (test_data or []) + [
                 ":tests",
                 "//:tsconfig",
