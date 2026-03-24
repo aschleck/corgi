@@ -64,10 +64,11 @@ vdomCaching.disable();
 export async function serve<Server extends Http2SecureServer>(
         app: ElementFactory,
         page: PageFn,
-        {dataServer, defaultTitle, fastifyOptions, initialize, host, port}: {
+        {dataServer, defaultTitle, fastifyOptions, fetchOptions, initialize, host, port}: {
           dataServer?: string;
           defaultTitle: string;
           fastifyOptions?: FastifyHttp2Options<Server> | FastifyHttp2SecureOptions<Server>;
+          fetchOptions?: RequestInit;
           initialize?: (f: FastifyInstance<Server>) => Promise<void>,
           host?: string;
           port: number;
@@ -144,6 +145,7 @@ export async function serve<Server extends Http2SecureServer>(
             body: JSON.stringify({
               keys: missingData,
             }),
+            ...fetchOptions,
           });
 
         if (!response.ok) {
