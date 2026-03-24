@@ -4,7 +4,7 @@ export class LittleEndianView {
   readonly limit: number;
   position: number;
 
-  constructor(private readonly buffer: ArrayBuffer, position: number = 0, limit: number = -1) {
+  constructor(private readonly buffer: ArrayBufferLike, position: number = 0, limit: number = -1) {
     this.view = new DataView(this.buffer);
     this.position = position;
     this.limit = limit >= 0 ? limit : this.buffer.byteLength;
