@@ -33,6 +33,14 @@ export class DefaultMap<K, V> {
     return this.map.has(key);
   }
 
+  entries(): IterableIterator<[K, V]> {
+    return this.map.entries();
+  }
+
+  forEach(callbackFn: (value: V, key: K) => void): void {
+    this.map.forEach(callbackFn);
+  }
+
   keys(): IterableIterator<K> {
     return this.map.keys();
   }
@@ -88,6 +96,21 @@ export class HashMap<K, V> {
     return this.mapped.has(this.hashFn(key));
   }
 
+  entries(): IterableIterator<[K, V]> {
+    const self = this;
+    return (function* () {
+      for (const [hash, key] of self._keys) {
+        yield [key, self.mapped.get(hash) as V] as [K, V];
+      }
+    })();
+  }
+
+  forEach(callbackFn: (value: V, key: K) => void): void {
+    for (const [key, value] of this) {
+      callbackFn(value, key);
+    }
+  }
+
   keys(): IterableIterator<K> {
     return this._keys.values();
   }
@@ -122,12 +145,12 @@ export class HashMap<K, V> {
 
 export class HashSet<V> {
 
-  private readonly mapped: Set<unknown>;
-  private readonly values: Map<unknown, V>;
+  private readonly hashes: Set<unknown>;
+  private readonly stored: Map<unknown, V>;
 
   constructor(private readonly hashFn: (value: V) => unknown, elements?: V[]) {
-    this.mapped = new Set();
-    this.values = new Map();
+    this.hashes = new Set();
+    this.stored = new Map();
 
     for (const element of elements ?? []) {
       this.add(element);
@@ -135,32 +158,42 @@ export class HashSet<V> {
   }
 
   get size(): number {
-    return this.mapped.size;
+    return this.hashes.size;
   }
 
   add(value: V): void {
     const hash = this.hashFn(value);
-    this.mapped.add(hash);
-    this.values.set(hash, value)
+    this.hashes.add(hash);
+    this.stored.set(hash, value);
   }
 
   clear(): void {
-    this.mapped.clear();
-    this.values.clear();
+    this.hashes.clear();
+    this.stored.clear();
   }
 
   delete(value: V): void {
     const hash = this.hashFn(value);
-    this.mapped.delete(hash);
-    this.values.delete(hash);
+    this.hashes.delete(hash);
+    this.stored.delete(hash);
+  }
+
+  forEach(callbackFn: (value: V) => void): void {
+    for (const value of this) {
+      callbackFn(value);
+    }
   }
 
   has(value: V): boolean {
-    return this.mapped.has(this.hashFn(value));
+    return this.hashes.has(this.hashFn(value));
+  }
+
+  values(): IterableIterator<V> {
+    return this.stored.values();
   }
 
   [Symbol.iterator](): Iterator<V> {
-    return this.values.values();
+    return this.stored.values();
   }
 }
 
