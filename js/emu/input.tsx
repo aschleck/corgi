@@ -73,7 +73,7 @@ export function Input(
             state: [state, updateState],
           })}
           autofocus={autofocus}
-          className="bg-transparent grow max-w-full outline-none placeholder-current"
+          className="bg-transparent grow max-w-full outline-none"
           name={name}
           placeholder={placeholder ?? ''}
           size={size}
