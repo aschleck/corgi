@@ -34,6 +34,7 @@ declare global {
       option: OptionProperties;
       p: Properties;
       path: PathProperties;
+      polygon: PolygonProperties;
       polyline: PolylineProperties;
       pre: Properties;
       rect: RectProperties;
@@ -209,13 +210,19 @@ export interface PolylineProperties
   points: string;
 }
 
+export interface PolygonProperties
+    extends SVGGraphicsProperties, SVGFilledProperties, SVGStrokedProperties, Properties {
+  points: string;
+}
+
 export interface SVGProperties extends Properties {
   height?: number|string;
   viewBox?: string;
   width?: number|string;
 }
 
-export interface TextProperties extends SVGGraphicsProperties, Properties {
+export interface TextProperties
+    extends SVGGraphicsProperties, SVGFilledProperties, SVGStrokedProperties, Properties {
   dominantBaseline?:
       'auto'|'text-bottom'|'alphabetic'|'ideographic'|'middle'|'central'|'mathematical'|'hanging'
             |'text-top';
