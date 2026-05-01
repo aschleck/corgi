@@ -119,6 +119,12 @@ export function createVirtualElement(
     creationTrace[creationTrace.length - 1]?.push(handle);
 
     creationTrace.push([]);
+    // Scope nested function elements' state lookups to OUR previous childTrace
+    // — otherwise a Leaf rendered inside Middle would shift entries off
+    // Grandparent's trace, corrupting Sibling's state lookup. updateState pushes
+    // for re-renders; createVirtualElement has to do it for the in-line render
+    // path that runs as part of an outer factory.
+    lastCreationTrace.push(lastPhysical ? [...lastPhysical.childTrace] : []);
     let result;
     try {
       result =
@@ -131,8 +137,10 @@ export function createVirtualElement(
               updateState));
     } catch (e: unknown) {
       creationTrace.pop();
+      lastCreationTrace.pop();
       throw e;
     }
+    lastCreationTrace.pop();
     result.childTrace = checkExists(creationTrace.pop());
     result.handle = handle;
     result.factorySource = {

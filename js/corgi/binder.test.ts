@@ -368,11 +368,6 @@ class NoisyController extends Controller<NoisyArgs, EmptyDeps, HTMLElement, {}> 
 }
 
 class SelfUpdatingController extends Controller<{}, EmptyDeps, HTMLElement, {}> {
-
-  constructor(response: Response<SelfUpdatingController>) {
-    super(response);
-  }
-
   clicked(): void {
     this.updateState({});
   }

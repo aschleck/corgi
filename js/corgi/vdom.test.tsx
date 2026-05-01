@@ -1,5 +1,7 @@
-import { waitSettled } from '../common/promises';
+import { waitMs, waitSettled } from '../common/promises';
 import * as corgi from '../corgi';
+import { Controller, Response } from '../corgi/controller';
+import { EmptyDeps } from '../corgi/deps';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -186,8 +188,122 @@ test('hydrates order correctly', async () => {
   expect(document.body.innerHTML).toBe('<div>Hi<span>Goodbye</span></div>');
 });
 
+// Function-element state used to leak across siblings whenever one of them
+// rendered nested function elements: the inner createVirtualElement consumed
+// entries from the parent's lastCreationTrace that belonged to the next
+// sibling, so on every re-render of the grandparent, anything past the first
+// nesting parent fell back to undefined and reset.
+test('nested function-element state survives parent re-render', async () => {
+  corgi.appendElement(document.body, <Grandparent />);
+  await waitSettled();
+
+  // Leaf is two levels deep (Grandparent -> Middle -> Leaf).
+  (document.body.querySelector('[data-leaf]') as HTMLButtonElement).click();
+  await waitMs(10);
+  expect(document.body.querySelector('[data-leaf]')!.getAttribute('data-leaf')).toBe('open');
+
+  // Sibling is rendered AFTER Middle, so its state lookup is the one that gets
+  // corrupted by Leaf consuming the wrong slot.
+  (document.body.querySelector('[data-sibling]') as HTMLButtonElement).click();
+  await waitMs(10);
+  expect(document.body.querySelector('[data-sibling]')!.getAttribute('data-sibling')).toBe('on');
+
+  (document.body.querySelector('[data-bump]') as HTMLButtonElement).click();
+  await waitMs(10);
+  expect(document.body.querySelector('[data-leaf]')!.getAttribute('data-leaf')).toBe('open');
+  expect(document.body.querySelector('[data-sibling]')!.getAttribute('data-sibling')).toBe('on');
+});
+
 function SimpleString() {
   return 'hello';
+}
+
+// Grandparent has a bump button and two siblings: a wrapper that nests Leaf,
+// and Sibling. `tick` is passed as a prop so each parent render produces a
+// different factorySource (cache miss in patchChildren), forcing the lookup
+// path that previously corrupted sibling state.
+function Grandparent(
+    {}: {},
+    state: {tick: number}|undefined,
+    updateState: (s: {tick: number}) => void) {
+  if (!state) state = {tick: 0};
+  const tick = state.tick;
+  return (
+    <div>
+      <button
+          data-bump
+          js={corgi.bind({
+            controller: BumpController,
+            args: {bump: () => updateState({tick: tick + 1})},
+            events: {click: 'clicked'},
+            state: [{}, () => {}],
+          })}>
+        bump
+      </button>
+      <Middle tick={tick} />
+      <Sibling tick={tick} />
+    </div>
+  );
+}
+
+function Middle({tick}: {tick: number}) {
+  return <div><Leaf tick={tick} /></div>;
+}
+
+function Leaf(
+    {}: {tick: number},
+    state: {open: boolean}|undefined,
+    updateState: (s: {open: boolean}) => void) {
+  if (!state) state = {open: false};
+  return (
+    <button
+        data-leaf={state.open ? 'open' : 'closed'}
+        js={corgi.bind({
+          controller: ToggleController,
+          events: {click: 'toggle'},
+          state: [state, updateState],
+        })}>
+      leaf
+    </button>
+  );
+}
+
+function Sibling(
+    {}: {tick: number},
+    state: {on: boolean}|undefined,
+    updateState: (s: {on: boolean}) => void) {
+  if (!state) state = {on: false};
+  return (
+    <button
+        data-sibling={state.on ? 'on' : 'off'}
+        js={corgi.bind({
+          controller: SiblingController,
+          events: {click: 'toggle'},
+          state: [state, updateState],
+        })}>
+      sibling
+    </button>
+  );
+}
+
+class ToggleController extends Controller<{}, EmptyDeps, HTMLElement, {open: boolean}> {
+  toggle(): void { this.updateState({...this.state, open: !this.state.open}); }
+}
+
+class SiblingController extends Controller<{}, EmptyDeps, HTMLElement, {on: boolean}> {
+  toggle(): void { this.updateState({...this.state, on: !this.state.on}); }
+}
+
+class BumpController extends Controller<{bump: () => void}, EmptyDeps, HTMLElement, {}> {
+  private bumpFn: () => void;
+  constructor(response: Response<BumpController>) {
+    super(response);
+    this.bumpFn = response.args.bump;
+  }
+  updateArgs(args: {bump: () => void}) {
+    this.bumpFn = args.bump;
+  }
+  clicked(): void { this.bumpFn(); }
 }
 
 function WrapChildren({children}: {children?: corgi.VElementOrPrimitive[]}) {
