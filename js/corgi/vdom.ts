@@ -295,6 +295,7 @@ const TAG_TO_NAMESPACE = new Map([
   ['g', 'http://www.w3.org/2000/svg'],
   ['line', 'http://www.w3.org/2000/svg'],
   ['path', 'http://www.w3.org/2000/svg'],
+  ['polygon', 'http://www.w3.org/2000/svg'],
   ['polyline', 'http://www.w3.org/2000/svg'],
   ['rect', 'http://www.w3.org/2000/svg'],
   ['svg', 'http://www.w3.org/2000/svg'],
