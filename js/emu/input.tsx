@@ -11,6 +11,18 @@ export type InputProps = {
   name?: string,
   placeholder?: string,
   size?: number,
+  type?:
+      'date'
+      |'datetime-local'
+      |'email'
+      |'month'
+      |'password'
+      |'search'
+      |'tel'
+      |'text'
+      |'time'
+      |'url'
+      |'week',
   ref?: string,
 } & corgi.InputProperties;
 
@@ -25,6 +37,7 @@ export function Input(
       placeholder,
       ref,
       size,
+      type,
       value,
       ...props
     }: InputProps,
@@ -64,6 +77,7 @@ export function Input(
           name={name}
           placeholder={placeholder ?? ''}
           size={size}
+          type={type}
           value={forceValue ? value : state.managed ? state.forcedValue : undefined}
       />
       {inset ?? ''}

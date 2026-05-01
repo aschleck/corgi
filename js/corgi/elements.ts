@@ -130,7 +130,18 @@ export interface InputNumberProperties extends BaseInputProperties {
 }
 
 export interface InputOtherProperties extends BaseInputProperties {
-  type?: 'password'|'text';
+  type?:
+      'date'
+      |'datetime-local'
+      |'email'
+      |'month'
+      |'password'
+      |'search'
+      |'tel'
+      |'text'
+      |'time'
+      |'url'
+      |'week';
 }
 
 export interface InputRadioProperties extends BaseInputProperties {
