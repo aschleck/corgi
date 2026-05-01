@@ -408,6 +408,16 @@ function patchController(
     checkArgument(deepEqual(from.events, to.events), 'Patching events is not supported');
     checkArgument(deepEqual(from.ref, to.ref), 'Patching ref is not supported');
     was.args = to.args;
+    // The controller's debouncer reads response.state[1] each fire, and
+    // response.state is the same tuple as was.state at construction time. On a
+    // parent re-render `to.state[1]` closes over the latest vdom handle, while
+    // the original closes over an orphaned one — so updates from this
+    // controller would land on a stale physical and be discarded by the
+    // parent's next render. Mutate in place to keep the tuple current.
+    if (to.state) {
+      was.state[0] = to.state[0];
+      was.state[1] = to.state[1];
+    }
     if (was.instance) {
       was.instance.then(c => { c.updateArgs(to.args); });
     }

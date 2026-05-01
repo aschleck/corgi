@@ -1,4 +1,4 @@
-import { waitSettled, waitTicks } from '../common/promises';
+import { waitMs, waitSettled, waitTicks } from '../common/promises';
 import * as corgi from '../corgi';
 import { Binder } from '../corgi/binder';
 import { Controller, Response } from '../corgi/controller';
@@ -297,6 +297,43 @@ test('unbound events find new controller', async () => {
   expect(state.clicked).toBe(false);
 });
 
+// When the parent re-renders before a controller's debounced updateState
+// fires, the controller's stored response.state[1] used to keep pointing at
+// the original closure (which targets an orphaned vdom handle). The next
+// state update would land nowhere and be discarded by the parent's next
+// render.
+test('patched controller routes updateState to the latest closure', async () => {
+  const div = document.createElement('div');
+  document.body.append(div);
+  const binder = new Binder();
+
+  const calls: string[] = [];
+  const oldProps = {
+    js: corgi.bind({
+      controller: SelfUpdatingController,
+      events: {click: 'clicked'},
+      state: [{}, () => { calls.push('old'); }],
+    }),
+  };
+  binder.createdElement(div, oldProps);
+  await waitSettled();
+
+  const newProps = {
+    js: corgi.bind({
+      controller: SelfUpdatingController,
+      events: {click: 'clicked'},
+      state: [{}, () => { calls.push('new'); }],
+    }),
+  };
+  binder.patchedElement(div, oldProps, newProps);
+  await waitSettled();
+
+  div.click();
+  await waitMs(10);
+
+  expect(calls).toEqual(['new']);
+});
+
 interface NoisyArgs {
   initCallback?: () => void;
   clickCallback?: () => void;
@@ -327,6 +364,17 @@ class NoisyController extends Controller<NoisyArgs, EmptyDeps, HTMLElement, {}> 
     if (newArgs.updateArgsCallback) {
       newArgs.updateArgsCallback();
     }
+  }
+}
+
+class SelfUpdatingController extends Controller<{}, EmptyDeps, HTMLElement, {}> {
+
+  constructor(response: Response<SelfUpdatingController>) {
+    super(response);
+  }
+
+  clicked(): void {
+    this.updateState({});
   }
 }
 
