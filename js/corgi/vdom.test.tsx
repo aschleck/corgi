@@ -386,7 +386,7 @@ function Flipper(
     });
   }
 
-  return <div>Pushed: {state.pushed}</div>;
+  return <div>Pushed: {String(state.pushed)}</div>;
 }
 
 function FlipperHidden(
