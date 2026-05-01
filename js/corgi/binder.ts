@@ -147,6 +147,9 @@ export class Binder implements Listener {
   private promise: Promise<void>|undefined = undefined;
 
   createdElement(element: Element, props: Properties): void {
+    if (props.js && props.unboundEvents) {
+      throw new Error('Cannot specify both js and unboundEvents on the same element');
+    }
     if (props.js) {
       element.setAttribute('data-js', '');
       if (props.js.ref) {
@@ -168,6 +171,9 @@ export class Binder implements Listener {
   }
 
   patchedElement(element: Element, from: Properties, to: Properties): void {
+    if (to.js && to.unboundEvents) {
+      throw new Error('Cannot specify both js and unboundEvents on the same element');
+    }
     if (from.js || to.js) {
       this.pushAction({
         kind: 'pc',
