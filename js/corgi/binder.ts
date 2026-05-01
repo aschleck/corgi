@@ -27,6 +27,7 @@ interface PropertyKeyToHandlerMap<C> {
     EventSpec<unknown>,
     AMethodOnWithParameters<C, [CustomEvent<unknown>]>,
   ]>;
+  dblclick: AMethodOnWithParameters<C, [CustomEvent<MouseEvent>]>;
   drag: AMethodOnWithParameters<C, [CustomEvent<DragEvent>]>;
   dragend: AMethodOnWithParameters<C, [CustomEvent<DragEvent>]>;
   dragenter: AMethodOnWithParameters<C, [CustomEvent<DragEvent>]>;
@@ -46,6 +47,7 @@ interface PropertyKeyToHandlerMap<C> {
   mouseover: AMethodOnWithParameters<C, [CustomEvent<MouseEvent>]>;
   mouseout: AMethodOnWithParameters<C, [CustomEvent<MouseEvent>]>;
   mouseup: AMethodOnWithParameters<C, [CustomEvent<MouseEvent>]>;
+  pointercancel: AMethodOnWithParameters<C, [CustomEvent<PointerEvent>]>;
   pointerdown: AMethodOnWithParameters<C, [CustomEvent<PointerEvent>]>;
   pointerenter: AMethodOnWithParameters<C, [CustomEvent<PointerEvent>]>;
   pointerleave: AMethodOnWithParameters<C, [CustomEvent<PointerEvent>]>;
