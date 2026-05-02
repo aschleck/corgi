@@ -12,7 +12,8 @@ export type InputProps = {
   placeholder?: string,
   size?: number,
   type?:
-      'date'
+      'color'
+      |'date'
       |'datetime-local'
       |'email'
       |'month'

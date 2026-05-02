@@ -313,6 +313,7 @@ const TAG_TO_NAMESPACE = new Map([
   ['g', 'http://www.w3.org/2000/svg'],
   ['line', 'http://www.w3.org/2000/svg'],
   ['path', 'http://www.w3.org/2000/svg'],
+  ['pattern', 'http://www.w3.org/2000/svg'],
   ['polygon', 'http://www.w3.org/2000/svg'],
   ['polyline', 'http://www.w3.org/2000/svg'],
   ['rect', 'http://www.w3.org/2000/svg'],
@@ -784,8 +785,73 @@ function patchProperties(element: Element, from: AnyProperties, to: AnyPropertie
 
 let nextElementId = 0;
 
+// SVG attribute names that the spec defines as camelCase. The browser's
+// SVG parser reads these case-sensitively (`patternUnits`, not
+// `pattern-units`), so they must skip the kebab-case conversion that
+// HTML attributes go through.
+const SVG_CAMELCASE_ATTRS = new Set([
+  'attributeName',
+  'attributeType',
+  'baseFrequency',
+  'baseProfile',
+  'calcMode',
+  'clipPathUnits',
+  'diffuseConstant',
+  'edgeMode',
+  'filterUnits',
+  'glyphRef',
+  'gradientTransform',
+  'gradientUnits',
+  'kernelMatrix',
+  'kernelUnitLength',
+  'keyPoints',
+  'keySplines',
+  'keyTimes',
+  'lengthAdjust',
+  'limitingConeAngle',
+  'markerHeight',
+  'markerUnits',
+  'markerWidth',
+  'maskContentUnits',
+  'maskUnits',
+  'numOctaves',
+  'pathLength',
+  'patternContentUnits',
+  'patternTransform',
+  'patternUnits',
+  'pointsAtX',
+  'pointsAtY',
+  'pointsAtZ',
+  'preserveAlpha',
+  'preserveAspectRatio',
+  'primitiveUnits',
+  'refX',
+  'refY',
+  'repeatCount',
+  'repeatDur',
+  'requiredExtensions',
+  'requiredFeatures',
+  'specularConstant',
+  'specularExponent',
+  'spreadMethod',
+  'startOffset',
+  'stdDeviation',
+  'stitchTiles',
+  'surfaceScale',
+  'systemLanguage',
+  'tableValues',
+  'targetX',
+  'targetY',
+  'textLength',
+  'viewBox',
+  'viewTarget',
+  'xChannelSelector',
+  'yChannelSelector',
+  'zoomAndPan',
+]);
+
 export function canonicalize(key: string): string {
-  if (key === 'viewBox') {
+  if (SVG_CAMELCASE_ATTRS.has(key)) {
     return key;
   } else {
     let k = '';

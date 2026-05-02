@@ -41,6 +41,7 @@ declare global {
       option: OptionProperties;
       p: Properties;
       path: PathProperties;
+      pattern: PatternProperties;
       polygon: PolygonProperties;
       polyline: PolylineProperties;
       pre: Properties;
@@ -144,7 +145,8 @@ export interface InputNumberProperties extends BaseInputProperties {
 
 export interface InputOtherProperties extends BaseInputProperties {
   type?:
-      'date'
+      'color'
+      |'date'
       |'datetime-local'
       |'email'
       |'month'
@@ -220,6 +222,26 @@ export interface PathProperties
   d: string;
 }
 
+export interface PatternProperties extends Properties {
+  patternUnits?: 'userSpaceOnUse'|'objectBoundingBox';
+  patternContentUnits?: 'userSpaceOnUse'|'objectBoundingBox';
+  patternTransform?: string;
+  x?: number|string;
+  y?: number|string;
+  width?: number|string;
+  height?: number|string;
+}
+
+export interface PolygonProperties
+    extends SVGGraphicsProperties, SVGFilledProperties, SVGStrokedProperties, Properties {
+  points: string;
+}
+
+export interface PolylineProperties
+    extends SVGGraphicsProperties, SVGFilledProperties, SVGStrokedProperties, Properties {
+  points: string;
+}
+
 export interface RectProperties
     extends SVGGraphicsProperties, SVGFilledProperties, SVGStrokedProperties, Properties {
   rx?: number|string;
@@ -228,16 +250,6 @@ export interface RectProperties
   height: number|string;
   x: number|string;
   y: number|string;
-}
-
-export interface PolylineProperties
-    extends SVGGraphicsProperties, SVGFilledProperties, SVGStrokedProperties, Properties {
-  points: string;
-}
-
-export interface PolygonProperties
-    extends SVGGraphicsProperties, SVGFilledProperties, SVGStrokedProperties, Properties {
-  points: string;
 }
 
 export interface SVGProperties extends Properties {
