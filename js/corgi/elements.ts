@@ -15,6 +15,8 @@ declare global {
       canvas: Properties;
       code: Properties;
       circle: CircleProperties;
+      clipPath: Properties;
+      defs: Properties;
       details: Properties;
       div: Properties;
       form: Properties;
@@ -70,6 +72,7 @@ export interface Properties {
   className?: string;
   data?: {[key: string]: boolean|number|string};
   draggable?: boolean;
+  id?: string;
   js?: AnyBoundController;
   // Opts into keyed reconciliation: keyed children travel by key across
   // reorders instead of being rebound at fixed positions. Unkeyed siblings
@@ -98,6 +101,7 @@ interface SVGStrokedProperties {
 
 export interface AnchorProperties extends Properties {
   href?: string;
+  rel?: string;
   target?: '_self'|'_blank'|'_parent'|'_top';
 }
 
@@ -181,6 +185,7 @@ export interface TextAreaProperties extends Properties {
 }
 
 export interface SVGGraphicsProperties extends Properties {
+  clipPath?: string;
   opacity?: number|string;
   transform?: string;
   transformOrigin?: string;

@@ -308,6 +308,8 @@ export const vdomCaching = new VdomCaching();
 
 const TAG_TO_NAMESPACE = new Map([
   ['circle', 'http://www.w3.org/2000/svg'],
+  ['clipPath', 'http://www.w3.org/2000/svg'],
+  ['defs', 'http://www.w3.org/2000/svg'],
   ['g', 'http://www.w3.org/2000/svg'],
   ['line', 'http://www.w3.org/2000/svg'],
   ['path', 'http://www.w3.org/2000/svg'],
