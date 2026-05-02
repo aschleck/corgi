@@ -14,6 +14,7 @@ interface VElement {
   tag: string|(typeof FRAGMENT_MARKER);
   children: VElementOrPrimitive[];
   handle: Handle;
+  key: string|undefined;
   props: Properties;
   childTrace: Handle[];
   factorySource: FactorySource|undefined;
@@ -47,6 +48,7 @@ interface PhysicalElement {
   childHandles: Handle[];
   childTrace: Handle[];
   factorySource: FactorySource|undefined;
+  key: string|undefined;
   props: Properties;
 }
 
@@ -92,6 +94,7 @@ export function createVirtualElement(
       }
 
       result.handle = handle;
+      result.key = props?.key;
       result.childTrace = checkExists(creationTrace.pop());
       result.factorySource = {
         factory: element,
@@ -143,6 +146,7 @@ export function createVirtualElement(
     lastCreationTrace.pop();
     result.childTrace = checkExists(creationTrace.pop());
     result.handle = handle;
+    result.key = props?.key;
     result.factorySource = {
       factory: element,
       children: flatChildren,
@@ -155,6 +159,7 @@ export function createVirtualElement(
       tag: element,
       children: flatChildren,
       handle,
+      key: props?.key,
       props: props ?? {},
       childTrace: [],
       factorySource: undefined,
@@ -214,6 +219,7 @@ function hydrateElementRecursively(
           childHandles: [],
           childTrace: [],
           factorySource: undefined,
+          key: undefined,
           props: {},
         });
     return {
@@ -246,6 +252,7 @@ function hydrateElementRecursively(
           childHandles,
           childTrace: element.childTrace,
           factorySource: element.factorySource,
+          key: element.key,
           props: element.props,
         });
     return {
@@ -273,6 +280,7 @@ function hydrateElementRecursively(
           childHandles,
           childTrace: element.childTrace,
           factorySource: element.factorySource,
+          key: element.key,
           props: element.props,
         });
     listeners.forEach(l => { l.createdElement(node, element.props) });
@@ -327,12 +335,14 @@ function* createElement(element: VElementOrPrimitive, handle: Handle, parent: El
           childHandles: [],
           childTrace: [],
           factorySource: undefined,
+          key: undefined,
           props: {},
         });
     yield node;
     return;
   }
 
+  checkUniqueKeys(element.children);
   const childHandles = [];
   for (const child of element.children) {
     childHandles.push(maybeCreateHandle(child));
@@ -356,6 +366,7 @@ function* createElement(element: VElementOrPrimitive, handle: Handle, parent: El
           childHandles,
           childTrace: element.childTrace,
           factorySource: element.factorySource,
+          key: element.key,
           props: element.props,
         });
     if (childHandles.length === 0) {
@@ -378,6 +389,7 @@ function* createElement(element: VElementOrPrimitive, handle: Handle, parent: El
           childHandles,
           childTrace: element.childTrace,
           factorySource: element.factorySource,
+          key: element.key,
           props: element.props,
         });
     listeners.forEach(l => { l.createdElement(root, element.props) });
@@ -397,16 +409,61 @@ function appendChildrenToRoot(
   }
 }
 
+// Reconciles `is` against `was`. Keyed `is` children claim the `was` child
+// with the same key; unkeyed `is` children claim the next unclaimed unkeyed
+// `was` child by relative position. We then walk the matches in `is` order,
+// moving any reused child whose `wasIndex` regressed below the highest one
+// already placed. With no keys, every `wasIndex` is non-decreasing — no
+// moves happen and the DOM ops match the pre-keys algorithm.
 function patchChildren(
     parent: Element, was: Handle[], is: VElementOrPrimitive[], placeholder: Node|undefined): {
       childHandles: Handle[];
       last: Node|undefined;
     } {
-  const newHandles = [];
-  let last;
-  for (let i = 0; i < Math.min(is.length, was.length); ++i) {
-    const wasElement = checkExists(createdElements.get(was[i]));
-    const isElement = is[i];
+  const {matches, claimed} = matchChildren(was, is);
+  const newHandles: Handle[] = [];
+  let last: Node|undefined = undefined;
+  let lastPlacedIndex = -1;
+
+  // Anchor for inserts that happen before we've placed anything: the first
+  // existing DOM node, falling back to the empty-fragment placeholder.
+  let initialAnchor: Node|null = placeholder ?? null;
+  for (const handle of was) {
+    const physical = createdElements.get(handle);
+    if (!physical) continue;
+    const dom = firstDomNodeOf(physical);
+    if (dom !== undefined) {
+      initialAnchor = dom;
+      break;
+    }
+  }
+
+  for (const match of matches) {
+    const isElement = match.isElement;
+    if (match.wasIndex === undefined) {
+      const handle = maybeCreateHandle(isElement);
+      const adding = [...createElement(isElement, handle, parent)];
+      const next = last ? last.nextSibling : initialAnchor;
+      for (const a of adding) {
+        parent.insertBefore(a, next);
+        last = a;
+      }
+      newHandles.push(handle);
+      continue;
+    }
+
+    const wasIndex = match.wasIndex;
+    const wasHandle = was[wasIndex];
+    const wasElement = checkExists(createdElements.get(wasHandle));
+
+    if (wasIndex < lastPlacedIndex) {
+      const target = last ? last.nextSibling : initialAnchor;
+      for (const node of gatherDomNodes(wasElement)) {
+        parent.insertBefore(node, target);
+      }
+    } else {
+      lastPlacedIndex = wasIndex;
+    }
 
     if (wasElement.self === undefined
         && (isElement instanceof Object && isElement.tag === FRAGMENT_MARKER)) {
@@ -422,23 +479,24 @@ function patchChildren(
         continue;
       }
 
-      const placeholder = wasElement.placeholder;
+      const fragmentPlaceholder = wasElement.placeholder;
       const result =
-          patchChildren(parent, wasElement.childHandles, isElement.children, placeholder);
+          patchChildren(parent, wasElement.childHandles, isElement.children, fragmentPlaceholder);
       last = result?.last ?? last;
       createdElements.set(
           handle, {
             parent,
             self: undefined,
-            placeholder,
+            placeholder: fragmentPlaceholder,
             childHandles: result.childHandles,
             childTrace: isElement.childTrace,
             factorySource: isElement.factorySource,
+            key: isElement.key,
             props: isElement.props,
           });
     } else if (wasElement.self === undefined) {
       const result =
-          patchChildren(parent, wasElement.childHandles, [isElement], wasElement.placeholder)
+          patchChildren(parent, wasElement.childHandles, [isElement], wasElement.placeholder);
       last = result?.last ?? last;
       arrays.pushInto(newHandles, result.childHandles);
     } else if (!(isElement instanceof Object)) {
@@ -455,18 +513,19 @@ function patchChildren(
     } else if (isElement.tag === FRAGMENT_MARKER) {
       const handle = maybeCreateHandle(isElement);
       newHandles.push(handle);
-      const placeholder = new Text('');
+      const fragmentPlaceholder = new Text('');
       const result =
-          patchChildren(parent, [was[i]], isElement.children, placeholder);
+          patchChildren(parent, [wasHandle], isElement.children, fragmentPlaceholder);
       last = result?.last ?? last;
       createdElements.set(
           handle, {
             parent,
             self: undefined,
-            placeholder,
+            placeholder: fragmentPlaceholder,
             childHandles: result.childHandles,
             childTrace: isElement.childTrace,
             factorySource: isElement.factorySource,
+            key: isElement.key,
             props: isElement.props,
           });
     } else {
@@ -475,28 +534,17 @@ function patchChildren(
     }
   }
 
-  const next = last ? last.nextSibling : (placeholder ?? null);
-  for (let i = was.length; i < is.length; ++i) {
-    const isElement = is[i];
-    const handle = maybeCreateHandle(isElement);
-    const adding = [...createElement(isElement, handle, parent)];
-    for (const a of adding) {
-      parent.insertBefore(a, next);
-      last = a;
-    }
-    newHandles.push(handle);
-  }
-
-  if (placeholder && was.length < is.length && was.length === 0) {
+  if (placeholder && was.length === 0 && is.length > 0) {
     parent.removeChild(placeholder);
   }
 
-  for (let i = is.length; i < was.length; ++i) {
+  for (let i = 0; i < was.length; i++) {
+    if (claimed[i]) continue;
     const wasElement = checkExists(createdElements.get(was[i]));
 
     if (wasElement.self === undefined) {
       patchChildren(parent, wasElement.childHandles, [], wasElement.placeholder);
-      last = wasElement.placeholder;
+      last = wasElement.placeholder ?? last;
     } else {
       if (placeholder) {
         parent.insertBefore(placeholder, wasElement.self);
@@ -513,6 +561,94 @@ function patchChildren(
     childHandles: newHandles,
     last,
   };
+}
+
+interface VdomMatch {
+  wasIndex: number|undefined;
+  isElement: VElementOrPrimitive;
+}
+
+function matchChildren(
+    was: Handle[],
+    is: VElementOrPrimitive[]): {matches: VdomMatch[]; claimed: boolean[]} {
+  checkUniqueKeys(is);
+
+  const wasKeyToIndex = new Map<string, number>();
+  for (let i = 0; i < was.length; i++) {
+    const wasElement = createdElements.get(was[i]);
+    const k = wasElement?.key;
+    if (k !== undefined) {
+      // `was` keys came from a previous render that already passed
+      // checkUniqueKeys; a dup here means our own bookkeeping went sideways.
+      checkArgument(
+          !wasKeyToIndex.has(k),
+          `Duplicate key '${k}' in vdom previous siblings (corgi bug)`);
+      wasKeyToIndex.set(k, i);
+    }
+  }
+
+  const claimed: boolean[] = new Array(was.length).fill(false);
+  let unkeyedCursor = 0;
+  const matches: VdomMatch[] = [];
+
+  for (const isElement of is) {
+    const isKey = isElement instanceof Object ? isElement.key : undefined;
+    let wasIndex: number|undefined = undefined;
+
+    if (isKey !== undefined) {
+      const idx = wasKeyToIndex.get(isKey);
+      if (idx !== undefined && !claimed[idx]) {
+        wasIndex = idx;
+        claimed[idx] = true;
+      }
+    } else {
+      while (unkeyedCursor < was.length) {
+        const i = unkeyedCursor++;
+        if (claimed[i]) continue;
+        const wasElement = createdElements.get(was[i]);
+        if (wasElement?.key === undefined) {
+          wasIndex = i;
+          claimed[i] = true;
+          break;
+        }
+      }
+    }
+
+    matches.push({wasIndex, isElement});
+  }
+
+  return {matches, claimed};
+}
+
+function checkUniqueKeys(children: VElementOrPrimitive[]): void {
+  const seen = new Set<string>();
+  for (const child of children) {
+    if (!(child instanceof Object) || child.key === undefined) continue;
+    checkArgument(
+        !seen.has(child.key),
+        `Duplicate key '${child.key}' in vdom siblings`);
+    seen.add(child.key);
+  }
+}
+
+function* gatherDomNodes(physical: PhysicalElement): Generator<Node, void, void> {
+  if (physical.self !== undefined) {
+    yield physical.self;
+    return;
+  }
+  if (physical.childHandles.length === 0) {
+    if (physical.placeholder) yield physical.placeholder;
+    return;
+  }
+  for (const handle of physical.childHandles) {
+    const child = createdElements.get(handle);
+    if (child) yield* gatherDomNodes(child);
+  }
+}
+
+function firstDomNodeOf(physical: PhysicalElement): Node|undefined {
+  for (const n of gatherDomNodes(physical)) return n;
+  return undefined;
 }
 
 function patchNode(physical: PhysicalElement, to: VElement): Node|undefined {
@@ -555,7 +691,7 @@ function patchProperties(element: Element, from: AnyProperties, to: AnyPropertie
   const oldPropKeys = Object.keys(from) as Array<keyof AnyProperties>;
   const newPropKeys = Object.keys(to) as Array<keyof AnyProperties>;
   for (const key of newPropKeys) {
-    if (key === 'js' || key === 'unboundEvents') {
+    if (key === 'js' || key === 'key' || key === 'unboundEvents') {
       continue;
     }
 
@@ -706,6 +842,7 @@ export function Fragment({children}: {children: VElementOrPrimitive[]}): VElemen
     children,
     childTrace: [],
     handle: createHandle(),
+    key: undefined,
     factorySource: undefined,
     props: {},
   };

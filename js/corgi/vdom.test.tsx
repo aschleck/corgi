@@ -695,3 +695,321 @@ function TreeFlipper(
     );
   }
 }
+
+// --- Keyed reconciliation -------------------------------------------------
+//
+// `key` makes siblings travel by identity across reorders: DOM nodes (and
+// any state attached to them) move instead of being rebound at fixed
+// positions. Unkeyed siblings still match positionally among themselves.
+// Keys land on the function-element wrapper, so `<Keyed key=...>` is what
+// the outer patchChildren sees as keyed.
+
+function Keyed({k, label}: {k: string; label: string}) {
+  return <span data-k={k}>{label}</span>;
+}
+
+// Advances through `orderings` on each click so one test can drive several
+// reconcile cases.
+function KeyedSwapper(
+    {orderings}: {orderings: string[][]},
+    state: {step: number}|undefined,
+    updateState: (s: {step: number}) => void) {
+  if (!state) state = {step: 0};
+  const step = state.step;
+  return (
+    <div
+        data-swapper
+        js={corgi.bind({
+          controller: BumpController,
+          args: {bump: () => updateState({step: step + 1})},
+          events: {click: 'clicked'},
+          state: [{}, () => {}],
+        })}>
+      {orderings[step].map(k => <Keyed key={k} k={k} label={k} />)}
+    </div>
+  );
+}
+
+test('keys: swapping two keyed siblings reorders DOM', async () => {
+  corgi.appendElement(
+      document.body,
+      <KeyedSwapper orderings={[['a', 'b'], ['b', 'a']]} />);
+  await waitSettled();
+
+  expect(document.body.innerHTML)
+      .toBe(
+          '<div data-swapper="" data-js="">'
+              + '<span data-k="a">a</span>'
+              + '<span data-k="b">b</span>'
+              + '</div>');
+
+  (document.body.querySelector('[data-swapper]') as HTMLElement).click();
+  await waitMs(10);
+
+  expect(document.body.innerHTML)
+      .toBe(
+          '<div data-swapper="" data-js="">'
+              + '<span data-k="b">b</span>'
+              + '<span data-k="a">a</span>'
+              + '</div>');
+});
+
+test('keys: swap reuses the same DOM nodes (move, not recreate)', async () => {
+  corgi.appendElement(
+      document.body,
+      <KeyedSwapper orderings={[['a', 'b'], ['b', 'a']]} />);
+  await waitSettled();
+
+  const before = Array.from(
+      document.body.querySelectorAll('[data-k]')) as HTMLElement[];
+  // Stamp the live nodes; a recreate would drop the stamp.
+  before.forEach(el => { el.dataset.tag = `tag-${el.dataset.k}`; });
+
+  (document.body.querySelector('[data-swapper]') as HTMLElement).click();
+  await waitMs(10);
+
+  const after = Array.from(
+      document.body.querySelectorAll('[data-k]')) as HTMLElement[];
+  expect(after[0].dataset.k).toBe('b');
+  expect(after[0].dataset.tag).toBe('tag-b');
+  expect(after[1].dataset.k).toBe('a');
+  expect(after[1].dataset.tag).toBe('tag-a');
+});
+
+test('keys: reverse a list of three', async () => {
+  corgi.appendElement(
+      document.body,
+      <KeyedSwapper orderings={[['a', 'b', 'c'], ['c', 'b', 'a']]} />);
+  await waitSettled();
+
+  (document.body.querySelector('[data-swapper]') as HTMLElement).click();
+  await waitMs(10);
+
+  const ks = Array.from(document.body.querySelectorAll('[data-k]'))
+      .map(el => (el as HTMLElement).dataset.k);
+  expect(ks).toEqual(['c', 'b', 'a']);
+});
+
+test('keys: insert in middle with keys', async () => {
+  corgi.appendElement(
+      document.body,
+      <KeyedSwapper orderings={[['a', 'c'], ['a', 'b', 'c']]} />);
+  await waitSettled();
+
+  const beforeC = document.body.querySelector('[data-k="c"]') as HTMLElement;
+  beforeC.dataset.tag = 'tag-c';
+
+  (document.body.querySelector('[data-swapper]') as HTMLElement).click();
+  await waitMs(10);
+
+  const ks = Array.from(document.body.querySelectorAll('[data-k]'))
+      .map(el => (el as HTMLElement).dataset.k);
+  expect(ks).toEqual(['a', 'b', 'c']);
+  // The pre-existing 'c' should still be the same DOM node.
+  const afterC = document.body.querySelector('[data-k="c"]') as HTMLElement;
+  expect(afterC.dataset.tag).toBe('tag-c');
+});
+
+test('keys: remove from middle with keys', async () => {
+  corgi.appendElement(
+      document.body,
+      <KeyedSwapper orderings={[['a', 'b', 'c'], ['a', 'c']]} />);
+  await waitSettled();
+
+  const a = document.body.querySelector('[data-k="a"]') as HTMLElement;
+  const c = document.body.querySelector('[data-k="c"]') as HTMLElement;
+  a.dataset.tag = 'tag-a';
+  c.dataset.tag = 'tag-c';
+
+  (document.body.querySelector('[data-swapper]') as HTMLElement).click();
+  await waitMs(10);
+
+  const ks = Array.from(document.body.querySelectorAll('[data-k]'))
+      .map(el => (el as HTMLElement).dataset.k);
+  expect(ks).toEqual(['a', 'c']);
+  // Survivors keep their stamped identity.
+  expect((document.body.querySelector('[data-k="a"]') as HTMLElement).dataset.tag)
+      .toBe('tag-a');
+  expect((document.body.querySelector('[data-k="c"]') as HTMLElement).dataset.tag)
+      .toBe('tag-c');
+});
+
+// Mixed keyed/unkeyed: keyed travel by key; unkeyed keep their positional
+// pairing AMONG UNKEYED SIBLINGS, so reordering keyed siblings doesn't
+// disturb unkeyed reuse.
+function MixedSwapper(
+    {orderings}: {orderings: Array<Array<{kind: 'k', id: string} | {kind: 'u', label: string}>>},
+    state: {step: number}|undefined,
+    updateState: (s: {step: number}) => void) {
+  if (!state) state = {step: 0};
+  const step = state.step;
+  return (
+    <div
+        data-swapper
+        js={corgi.bind({
+          controller: BumpController,
+          args: {bump: () => updateState({step: step + 1})},
+          events: {click: 'clicked'},
+          state: [{}, () => {}],
+        })}>
+      {orderings[step].map(item =>
+          item.kind === 'k'
+              ? <Keyed key={item.id} k={item.id} label={item.id} />
+              : <span data-u={item.label}>{item.label}</span>
+      )}
+    </div>
+  );
+}
+
+test('keys: keyed sibling inserted between unkeyed siblings preserves unkeyed identity', async () => {
+  corgi.appendElement(
+      document.body,
+      <MixedSwapper orderings={[
+        [{kind: 'u', label: 'A'}, {kind: 'u', label: 'B'}],
+        [{kind: 'u', label: 'A'}, {kind: 'k', id: 'x'}, {kind: 'u', label: 'B'}],
+      ]} />);
+  await waitSettled();
+
+  const a = document.body.querySelector('[data-u="A"]') as HTMLElement;
+  const b = document.body.querySelector('[data-u="B"]') as HTMLElement;
+  a.dataset.tag = 'tag-A';
+  b.dataset.tag = 'tag-B';
+
+  (document.body.querySelector('[data-swapper]') as HTMLElement).click();
+  await waitMs(10);
+
+  // A and B keep their DOM identity; X is freshly created in between.
+  expect((document.body.querySelector('[data-u="A"]') as HTMLElement).dataset.tag)
+      .toBe('tag-A');
+  expect((document.body.querySelector('[data-u="B"]') as HTMLElement).dataset.tag)
+      .toBe('tag-B');
+  const order = Array.from(document.body.querySelectorAll('span')).map(el => {
+    const e = el as HTMLElement;
+    return e.dataset.k ?? e.dataset.u;
+  });
+  expect(order).toEqual(['A', 'x', 'B']);
+});
+
+test('keys: reordering keyed siblings doesnt disturb unkeyed positional reuse', async () => {
+  corgi.appendElement(
+      document.body,
+      <MixedSwapper orderings={[
+        [{kind: 'k', id: 'x'}, {kind: 'u', label: 'A'}, {kind: 'k', id: 'y'}],
+        [{kind: 'k', id: 'y'}, {kind: 'u', label: 'A'}, {kind: 'k', id: 'x'}],
+      ]} />);
+  await waitSettled();
+
+  const a = document.body.querySelector('[data-u="A"]') as HTMLElement;
+  a.dataset.tag = 'tag-A';
+
+  (document.body.querySelector('[data-swapper]') as HTMLElement).click();
+  await waitMs(10);
+
+  const order = Array.from(document.body.querySelectorAll('span')).map(el => {
+    const e = el as HTMLElement;
+    return e.dataset.k ?? e.dataset.u;
+  });
+  expect(order).toEqual(['y', 'A', 'x']);
+  expect((document.body.querySelector('[data-u="A"]') as HTMLElement).dataset.tag)
+      .toBe('tag-A');
+});
+
+// The bug this all set out to fix: a stateful descendant should travel
+// with its keyed ancestor across a reorder. We assert by checking that the
+// same DOM node represents 'a' before and after the swap.
+class CountController extends Controller<{}, EmptyDeps, HTMLElement, {count: number}> {
+  bump(): void { this.updateState({...this.state, count: this.state.count + 1}); }
+}
+
+function Counter({k}: {k: string}) {
+  return (
+    <button
+        data-counter={k}
+        js={corgi.bind({
+          controller: CountController,
+          events: {click: 'bump'},
+          state: [{count: 0}, () => {}],
+        })}>
+      counter-{k}
+    </button>
+  );
+}
+
+function CounterRow({k}: {k: string}) {
+  return <div data-row={k}><Counter k={k} /></div>;
+}
+
+function CounterList(
+    {orderings}: {orderings: string[][]},
+    state: {step: number}|undefined,
+    updateState: (s: {step: number}) => void) {
+  if (!state) state = {step: 0};
+  const step = state.step;
+  return (
+    <div
+        data-list
+        js={corgi.bind({
+          controller: BumpController,
+          args: {bump: () => updateState({step: step + 1})},
+          events: {click: 'clicked'},
+          state: [{}, () => {}],
+        })}>
+      {orderings[step].map(k => <CounterRow key={k} k={k} />)}
+    </div>
+  );
+}
+
+test('keys: stateful descendants travel with their keyed ancestor', async () => {
+  corgi.appendElement(
+      document.body,
+      <CounterList orderings={[['a', 'b'], ['b', 'a']]} />);
+  await waitSettled();
+
+  const counterA = document.body.querySelector('[data-counter="a"]') as HTMLElement;
+  counterA.click();
+  counterA.click();
+  counterA.click();
+  await waitMs(10);
+  expect(document.body.querySelector('[data-counter="a"]')).toBe(counterA);
+
+  // Click the list container (the BumpController), not a counter, to advance.
+  (document.body.querySelector('[data-list]') as HTMLElement).click();
+  await waitMs(10);
+
+  // Same DOM node — a fresh one would mean we rebound at fixed positions.
+  expect(document.body.querySelector('[data-counter="a"]')).toBe(counterA);
+
+  const order = Array.from(document.body.querySelectorAll('[data-counter]'))
+      .map(el => (el as HTMLElement).dataset.counter);
+  expect(order).toEqual(['b', 'a']);
+});
+
+test('keys: duplicate keys among siblings throws on initial mount', () => {
+  expect(() => {
+    corgi.appendElement(
+        document.body,
+        <div>
+          <span key="dup">first</span>
+          <span key="dup">second</span>
+        </div>);
+  }).toThrow(/Duplicate key 'dup'/);
+});
+
+test('keys: changing the key drops the old element and creates a new one', async () => {
+  corgi.appendElement(
+      document.body,
+      <KeyedSwapper orderings={[['a'], ['b']]} />);
+  await waitSettled();
+
+  const before = document.body.querySelector('[data-k="a"]') as HTMLElement;
+  before.dataset.tag = 'tag-a';
+
+  (document.body.querySelector('[data-swapper]') as HTMLElement).click();
+  await waitMs(10);
+
+  expect(document.body.querySelector('[data-k="a"]')).toBeNull();
+  const after = document.body.querySelector('[data-k="b"]') as HTMLElement;
+  expect(after).not.toBeNull();
+  // Fresh node — should not have inherited 'a's stamp.
+  expect(after.dataset.tag).toBeUndefined();
+});

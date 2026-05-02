@@ -2,6 +2,11 @@ import { AnyBoundController, UnboundEvents } from './binder';
 
 declare global {
   namespace JSX {
+    // JSX-level attribute so `key` is allowed on function components too,
+    // not just intrinsic elements. Consumed by the vdom; see Properties.key.
+    interface IntrinsicAttributes {
+      key?: string;
+    }
     interface IntrinsicElements {
       a: AnchorProperties;
       article: Properties;
@@ -66,6 +71,10 @@ export interface Properties {
   data?: {[key: string]: boolean|number|string};
   draggable?: boolean;
   js?: AnyBoundController;
+  // Opts into keyed reconciliation: keyed children travel by key across
+  // reorders instead of being rebound at fixed positions. Unkeyed siblings
+  // still match positionally among themselves. Never written to the DOM.
+  key?: string;
   style?: string; // TODO(april): this is sad
   tabindex?: string;
   title?: string;
