@@ -7,8 +7,12 @@ export type ButtonProps = {
   ref?: string,
 } & corgi.ButtonProperties;
 
+// `className` and `style` go on the inner element (the visible button/
+// anchor) so callers can control its appearance with either. `data` and
+// event handlers stay on the outer wrapper because that's where corgi
+// listeners and actionElement are anchored.
 export function Button(
-    {ariaLabel, children, className, ref, tabindex, ...props}: ButtonProps,
+    {ariaLabel, children, className, ref, style, tabindex, ...props}: ButtonProps,
     state: State|undefined,
     updateState: (newState: State) => void) {
   if (!state) {
@@ -31,6 +35,7 @@ export function Button(
           })}
           ariaLabel={ariaLabel}
           className={'h-full max-w-full [text-align:inherit]' + (className ? ` ${className}` : '')}
+          style={style}
           tabindex={tabindex}
       >
         {children}
@@ -40,7 +45,7 @@ export function Button(
 }
 
 export function Link(
-    {children, className, ref, tabindex, ...props}: ButtonProps,
+    {children, className, ref, style, tabindex, ...props}: ButtonProps,
     state: State|undefined,
     updateState: (newState: State) => void) {
   if (!state) {
@@ -62,6 +67,7 @@ export function Link(
             state: [state, updateState],
           })}
           className={'cursor-pointer' + (className ? ` ${className}` : '')}
+          style={style}
           tabindex={tabindex}
       >
         {children}
