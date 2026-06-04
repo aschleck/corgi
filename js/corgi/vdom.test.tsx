@@ -214,6 +214,39 @@ test('nested function-element state survives parent re-render', async () => {
   expect(document.body.querySelector('[data-sibling]')!.getAttribute('data-sibling')).toBe('on');
 });
 
+// When the element occupying a position changes factory (e.g. a router swapping
+// between two different views), the new element correctly gets fresh state — but
+// its nested function elements must not inherit the *previous* element's child
+// state. Both ViewA and ViewB render a Panel at the same position; opening
+// ViewA's Panel must not carry over when we swap to ViewB. Regression test for
+// the cross-view state leak (a Panel-equivalent table inheriting the filter of
+// the view we navigated away from).
+test('nested function-element state does not leak when the parent changes type', async () => {
+  corgi.appendElement(document.body, <Router />);
+  await waitSettled();
+
+  expect(document.body.querySelector('[data-view]')!.getAttribute('data-view')).toBe('a');
+  expect(document.body.querySelector('[data-panel]')!.getAttribute('data-panel')).toBe('closed');
+
+  // Open ViewA's panel.
+  (document.body.querySelector('[data-panel]') as HTMLButtonElement).click();
+  await waitMs(10);
+  expect(document.body.querySelector('[data-panel]')!.getAttribute('data-panel')).toBe('open');
+
+  // Swap to ViewB. It's a different component but renders a Panel at the same
+  // position; that Panel must start fresh, not inherit ViewA's 'open'.
+  (document.body.querySelector('[data-switch]') as HTMLButtonElement).click();
+  await waitMs(10);
+  expect(document.body.querySelector('[data-view]')!.getAttribute('data-view')).toBe('b');
+  expect(document.body.querySelector('[data-panel]')!.getAttribute('data-panel')).toBe('closed');
+
+  // And swapping back to ViewA also starts fresh (state isn't stashed per type).
+  (document.body.querySelector('[data-switch]') as HTMLButtonElement).click();
+  await waitMs(10);
+  expect(document.body.querySelector('[data-view]')!.getAttribute('data-view')).toBe('a');
+  expect(document.body.querySelector('[data-panel]')!.getAttribute('data-panel')).toBe('closed');
+});
+
 function SimpleString() {
   return 'hello';
 }
@@ -304,6 +337,58 @@ class BumpController extends Controller<{bump: () => void}, EmptyDeps, HTMLEleme
     this.bumpFn = args.bump;
   }
   clicked(): void { this.bumpFn(); }
+}
+
+// Router swaps between two distinct view factories at the same position. Like
+// Grandparent, the switch button passes its action via args so each render is a
+// fresh factorySource.
+function Router(
+    {}: {},
+    state: {view: 'a'|'b'}|undefined,
+    updateState: (s: {view: 'a'|'b'}) => void) {
+  if (!state) state = {view: 'a'};
+  const view = state.view;
+  return (
+    <div>
+      <button
+          data-switch
+          js={corgi.bind({
+            controller: BumpController,
+            args: {bump: () => updateState({view: view === 'a' ? 'b' : 'a'})},
+            events: {click: 'clicked'},
+            state: [{}, () => {}],
+          })}>
+        switch
+      </button>
+      {view === 'a' ? <ViewA /> : <ViewB />}
+    </div>
+  );
+}
+
+function ViewA() {
+  return <div data-view="a"><Panel /></div>;
+}
+
+function ViewB() {
+  return <div data-view="b"><Panel /></div>;
+}
+
+function Panel(
+    {}: {},
+    state: {open: boolean}|undefined,
+    updateState: (s: {open: boolean}) => void) {
+  if (!state) state = {open: false};
+  return (
+    <button
+        data-panel={state.open ? 'open' : 'closed'}
+        js={corgi.bind({
+          controller: ToggleController,
+          events: {click: 'toggle'},
+          state: [state, updateState],
+        })}>
+      panel
+    </button>
+  );
 }
 
 function WrapChildren({children}: {children?: corgi.VElementOrPrimitive[]}) {

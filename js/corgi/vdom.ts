@@ -112,10 +112,20 @@ export function createVirtualElement(
     const lastFactory = lastFactorySource?.factory;
 
     let state;
+    let priorChildTrace: Handle[];
     if (lastFactory && deepEqual(lastFactory, element)) {
       state = lastFactorySource.state;
+      // Same factory at this position: reuse its children's trace so nested
+      // function-element state is preserved across re-renders.
+      priorChildTrace = lastPhysical ? [...lastPhysical.childTrace] : [];
     } else {
+      // A different element (or nothing) previously occupied this position. Its
+      // children are unrelated to ours, so we must NOT scope our nested lookups
+      // to its childTrace — otherwise a same-typed descendant (e.g. a table
+      // rendered in both this route view and the one we navigated away from)
+      // would adopt the old view's state. Start fresh.
       state = undefined;
+      priorChildTrace = [];
     }
 
     // Push ourselves into our parent's trace, if it exists.
@@ -127,7 +137,7 @@ export function createVirtualElement(
     // Grandparent's trace, corrupting Sibling's state lookup. updateState pushes
     // for re-renders; createVirtualElement has to do it for the in-line render
     // path that runs as part of an outer factory.
-    lastCreationTrace.push(lastPhysical ? [...lastPhysical.childTrace] : []);
+    lastCreationTrace.push(priorChildTrace);
     let result;
     try {
       result =
