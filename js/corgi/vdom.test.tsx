@@ -214,6 +214,90 @@ test('nested function-element state survives parent re-render', async () => {
   expect(document.body.querySelector('[data-sibling]')!.getAttribute('data-sibling')).toBe('on');
 });
 
+// A child that updates its own state has to keep it across parent re-renders,
+// including ones that leave the child's props untouched. Those take
+// patchChildren's cache fast path, which skips the subtree and so never
+// re-points the child controller's updateState — leaving it writing through a
+// handle the parent has already moved past. It takes a varied re-render then an
+// identical one to desync the two, and a final varied one to repaint the child
+// from whatever state the parent handed back.
+test('child state survives a parent re-render that changes nothing', async () => {
+  corgi.appendElement(document.body, <ReRenderParent />);
+  await waitSettled();
+
+  const child = () => document.body.querySelector('[data-child]')!;
+  const count = () => (child() as HTMLButtonElement).click();
+  const vary = () => (document.body.querySelector('[data-vary]') as HTMLButtonElement).click();
+  const same = () => (document.body.querySelector('[data-same]') as HTMLButtonElement).click();
+
+  count();
+  await waitMs(10);
+  expect(child().getAttribute('data-child')).toBe('1');
+
+  vary();
+  await waitMs(10);
+  same();
+  await waitMs(10);
+
+  count();
+  await waitMs(10);
+  vary();
+  await waitMs(10);
+  expect(child().getAttribute('data-child')).toBe('2');
+});
+
+// Re-renders on both buttons; only `vary` changes what the child is passed.
+function ReRenderParent(
+    {}: {},
+    state: {tick: number; variant: number}|undefined,
+    updateState: (s: {tick: number; variant: number}) => void) {
+  if (!state) state = {tick: 0, variant: 0};
+  const {tick, variant} = state;
+  return (
+    <div>
+      <button
+          data-vary
+          js={corgi.bind({
+            controller: BumpController,
+            args: {bump: () => updateState({tick: tick + 1, variant: variant + 1})},
+            events: {click: 'clicked'},
+            state: [{}, () => {}],
+          })}>
+        vary
+      </button>
+      <button
+          data-same
+          js={corgi.bind({
+            controller: BumpController,
+            args: {bump: () => updateState({tick: tick + 1, variant})},
+            events: {click: 'clicked'},
+            state: [{}, () => {}],
+          })}>
+        same
+      </button>
+      <CountingChild variant={variant} />
+    </div>
+  );
+}
+
+function CountingChild(
+    {}: {variant: number},
+    state: {count: number}|undefined,
+    updateState: (s: {count: number}) => void) {
+  if (!state) state = {count: 0};
+  return (
+    <button
+        data-child={String(state.count)}
+        js={corgi.bind({
+          controller: CounterController,
+          events: {click: 'increment'},
+          state: [state, updateState],
+        })}>
+      child
+    </button>
+  );
+}
+
 // When the element occupying a position changes factory (e.g. a router swapping
 // between two different views), the new element correctly gets fresh state — but
 // its nested function elements must not inherit the *previous* element's child
@@ -321,6 +405,10 @@ function Sibling(
 
 class ToggleController extends Controller<{}, EmptyDeps, HTMLElement, {open: boolean}> {
   toggle(): void { this.updateState({...this.state, open: !this.state.open}); }
+}
+
+class CounterController extends Controller<{}, EmptyDeps, HTMLElement, {count: number}> {
+  increment(): void { this.updateState({...this.state, count: this.state.count + 1}); }
 }
 
 class SiblingController extends Controller<{}, EmptyDeps, HTMLElement, {on: boolean}> {

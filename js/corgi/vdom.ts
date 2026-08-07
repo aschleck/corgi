@@ -496,17 +496,23 @@ function patchChildren(
       const result =
           patchChildren(parent, wasElement.childHandles, isElement.children, fragmentPlaceholder);
       last = result?.last ?? last;
-      createdElements.set(
-          handle, {
-            parent,
-            self: undefined,
-            placeholder: fragmentPlaceholder,
-            childHandles: result.childHandles,
-            childTrace: isElement.childTrace,
-            factorySource: isElement.factorySource,
-            key: isElement.key,
-            props: isElement.props,
-          });
+      // Mutate the existing record rather than swapping in a new one, the way
+      // patchNode does for regular elements. Every render mints a fresh handle
+      // and the cache fast path above aliases the new handle onto this very
+      // record, so more than one handle can name it. A handle we already handed
+      // out has to keep observing updates — in particular the one a bound
+      // controller's updateState closed over, since that closure is only
+      // re-pointed by patchController, which the fast path skips. Replacing the
+      // object instead would leave that handle resolving to a frozen copy and
+      // the controller's updates invisible to the parent's next render.
+      wasElement.parent = parent;
+      wasElement.placeholder = fragmentPlaceholder;
+      wasElement.childHandles = result.childHandles;
+      wasElement.childTrace = isElement.childTrace;
+      wasElement.factorySource = isElement.factorySource;
+      wasElement.key = isElement.key;
+      wasElement.props = isElement.props;
+      createdElements.set(handle, wasElement);
     } else if (wasElement.self === undefined) {
       const result =
           patchChildren(parent, wasElement.childHandles, [isElement], wasElement.placeholder);
