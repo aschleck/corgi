@@ -163,7 +163,10 @@ function SubMenu({
   const width = estimateSize(items)[0];
   const rightPx = leftPx + width;
   const hasIcons = items.some(itemHasIcon);
-  const base = `absolute -top-1 z-50 ${flip ? 'end-full' : 'start-full'}`;
+  // The popup's containing block is the zero width div NormalMenu positions, so without an
+  // intrinsic width it shrinks to fit nothing and wraps every label. estimateSize measures labels
+  // unwrapped, so the clamping below assumes this too.
+  const base = `absolute -top-1 w-max z-50 ${flip ? 'end-full' : 'start-full'}`;
   const cls = classes.popup ? `${base} ${classes.popup}` : base;
   return (
     <div className={cls}>
@@ -347,7 +350,7 @@ function SearchMenu({
   classes: MenuClassNames;
   state: State;
 }) {
-  const base = 'absolute start-full -top-1 z-50 max-h-72 overflow-y-auto';
+  const base = 'absolute start-full -top-1 w-max z-50 max-h-72 overflow-y-auto';
   const cls = classes.popup ? `${base} ${classes.popup}` : base;
   return (
     <div className={cls} style={`left: ${anchor[0]}px; top: ${anchor[1]}px`}>
