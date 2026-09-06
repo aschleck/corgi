@@ -28,7 +28,13 @@ export class Timer extends Disposable {
   }
 
   private fire(): void {
+    const armed = this.current;
     this.callback();
+
+    // If callback() ended up calling stop() (or start()) then we want to bail out here
+    if (this.current !== armed) {
+      return;
+    }
 
     this.current = setTimeout(() => {
       this.fire();
