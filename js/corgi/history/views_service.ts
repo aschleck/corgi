@@ -1,5 +1,3 @@
-import { checkExists } from '../../common/asserts';
-
 import { Service, ServiceResponse } from '../service';
 
 import { HistoryService } from './history_service';
@@ -12,7 +10,8 @@ export type DiscriminatedRoute<R> = {[K in keyof R]: {
 type RouteMatchers<R> = {[k in keyof R]: RegExp};
 
 interface Listener<R> {
-  routeChanged(active: DiscriminatedRoute<R>, parameters: {[key: string]: string}): Promise<void>;
+  routeChanged(active: DiscriminatedRoute<R>|undefined, parameters: {[key: string]: string}):
+    Promise<void>;
 }
 
 type Deps = typeof ViewsService.deps;
@@ -49,7 +48,7 @@ export class ViewsService<R> extends Service<Deps> {
   }
 
   urlChanged(url: URL): Promise<void> {
-    const active = checkExists(matchPath(url.pathname, this.routes));
+    const active = matchPath(url.pathname, this.routes);
     const parameters = Object.fromEntries(new URLSearchParams(url.search).entries());
     const promises = [];
     for (const listener of this.listeners) {
