@@ -27,9 +27,14 @@ export class Timer extends Disposable {
     }
   }
 
-  private fire(): void {
+  private async fire(): Promise<void> {
     const armed = this.current;
-    this.callback();
+    try {
+      await this.callback();
+    } catch (e: unknown) {
+      // A throw must not silently stop the timer, so log it and stay on schedule.
+      console.error(e);
+    }
 
     // If callback() ended up calling stop() (or start()) then we want to bail out here
     if (this.current !== armed) {
