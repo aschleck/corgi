@@ -97,10 +97,15 @@ def c_ts_project(
             deps = None,
             snapshots = None,
             tags = [],
+            target_compatible_with = None,
             test_data = None,
             test_deps = None,
+            test_env = None,
+            test_size = None,
             test_srcs = None,
+            test_timeout = None,
             testonly = False,
+            visibility = None,
         ):
     srcs = srcs or native.glob(
         ["*.ts", "*.tsx"],
@@ -114,14 +119,18 @@ def c_ts_project(
         data = data,
         deps = deps,
         tags = tags,
+        target_compatible_with = target_compatible_with,
         testonly = testonly,
+        visibility = visibility,
     )
 
     _collect_data(
         name = name + "_data",
         tags = tags,
+        target_compatible_with = target_compatible_with,
         testonly = testonly,
         ts_project = ":" + name,
+        visibility = visibility,
     )
 
     if len(native.glob(["*.css"], allow_empty=True)):
@@ -132,14 +141,18 @@ def c_ts_project(
                 "//:node_modules/tailwindcss",
             ],
             tags = tags,
+            target_compatible_with = target_compatible_with,
             testonly = testonly,
+            visibility = visibility,
         )
     else:
         js_library(
             name = "css",
             deps = css_deps or [],
             tags = tags,
+            target_compatible_with = target_compatible_with,
             testonly = testonly,
+            visibility = visibility,
         )
 
     if len(test_srcs or native.glob(["*.test.ts", "*.test.tsx"], allow_empty=True)):
@@ -147,6 +160,7 @@ def c_ts_project(
             name = "tests",
             srcs = test_srcs or native.glob(["*.test.ts", "*.test.tsx"], allow_empty=True),
             tags = tags,
+            target_compatible_with = target_compatible_with,
             testonly = True,
             deps = (test_deps or []) + [
                 ":%s" % name,
@@ -158,10 +172,14 @@ def c_ts_project(
         jest_test(
             name = "jest",
             config = "@dev_april_corgi//build_defs:jest_config",
+            env = test_env,
             node_modules = "//:node_modules",
             node_options = ["--experimental-vm-modules"],
+            size = test_size,
             snapshots = snapshots or native.glob(["__snapshots__/*.snap"], allow_empty=True),
             tags = tags,
+            target_compatible_with = target_compatible_with,
+            timeout = test_timeout,
             data = (test_data or []) + [
                 ":tests",
                 "//:tsconfig",
