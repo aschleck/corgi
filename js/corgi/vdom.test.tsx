@@ -1186,3 +1186,58 @@ test('keys: changing the key drops the old element and creates a new one', async
   // Fresh node — should not have inherited 'a's stamp.
   expect(after.dataset.tag).toBeUndefined();
 });
+
+test('patches a child factory from an empty fragment to an element', async () => {
+  corgi.appendElement(document.body, <AnswerFlipper answers={[undefined, 'found']} />);
+  await waitSettled();
+  expect(document.body.innerHTML).toBe('<div><div>Done</div><table>found</table></div>');
+});
+
+test('patches a child factory from an element to an empty fragment', async () => {
+  corgi.appendElement(document.body, <AnswerFlipper answers={['found', undefined]} />);
+  await waitSettled();
+  expect(document.body.innerHTML).toBe('<div><div>Searching...</div></div>');
+});
+
+test('patches a child factory through an empty fragment and back', async () => {
+  corgi.appendElement(document.body, <AnswerFlipper answers={['one', undefined, 'two']} />);
+  await waitSettled();
+  expect(document.body.innerHTML).toBe('<div><div>Done</div><table>two</table></div>');
+});
+
+interface AnswerState {
+  step: number;
+}
+
+// The shape of a search page: a status line, then a child factory that renders nothing until there
+// is an answer to show.
+function AnswerFlipper(
+    {answers}: {answers: Array<string|undefined>},
+    state: AnswerState|undefined,
+    updateState: (newState: AnswerState) => void) {
+  if (!state) {
+    state = {step: 0};
+  }
+
+  const step = state.step;
+  if (step + 1 < answers.length) {
+    Promise.resolve().then(() => {
+      updateState({step: step + 1});
+    });
+  }
+
+  const answer = answers[step];
+  return (
+    <div>
+      <div>{answer === undefined ? 'Searching...' : 'Done'}</div>
+      <Answer answer={answer} />
+    </div>
+  );
+}
+
+function Answer({answer}: {answer: string|undefined}) {
+  if (answer === undefined) {
+    return <></>;
+  }
+  return <table>{answer}</table>;
+}
