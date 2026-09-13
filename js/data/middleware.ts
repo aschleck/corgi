@@ -12,6 +12,7 @@ interface Result<V> {
 interface Error {
   kind: 'error';
   code: number;
+  message?: string;
 }
 
 export type Response<V> = Result<V> | Error;

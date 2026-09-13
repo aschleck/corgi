@@ -18,6 +18,7 @@ interface Result {
 interface Error {
   kind: 'error';
   code: number;
+  message?: string;
 }
 
 export type ServerResponse = Result | Error;
