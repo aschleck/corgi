@@ -168,6 +168,35 @@ test('patches fragment dom out', async () => {
       .toBe('<div><span>Good</span><div><span>job</span></div><span>you pressed it</span></div>');
 });
 
+test('patches a fragment component in and out repeatedly', async () => {
+  corgi.appendElement(document.body, <FragmentToggler siblings={false} />);
+  await waitSettled();
+  expect(document.body.innerHTML).toBe('<div><span>shown</span></div>');
+});
+
+test('patches a fragment component in and out between siblings', async () => {
+  corgi.appendElement(document.body, <FragmentToggler siblings={true} />);
+  await waitSettled();
+  expect(document.body.innerHTML)
+      .toBe('<div><span>before</span><span>shown</span><span>after</span></div>');
+});
+
+test('inserts after dropping a fragment sibling', async () => {
+  corgi.appendElement(document.body, <FragmentDropper empty={false} />);
+  await waitSettled();
+  expect(document.body.innerHTML)
+      .toBe('<div><span>b</span><span>new</span><span>tail</span></div>');
+  expect(document.body.firstChild?.childNodes.length).toBe(3);
+});
+
+test('inserts after dropping an already empty fragment sibling', async () => {
+  corgi.appendElement(document.body, <FragmentDropper empty={true} />);
+  await waitSettled();
+  expect(document.body.innerHTML).toBe('<div><span>new</span><span>tail</span></div>');
+  // innerHTML hides empty text nodes. The surviving fragment's placeholder is the only one left.
+  expect(document.body.firstChild?.childNodes.length).toBe(3);
+});
+
 test('hydrates dom', async () => {
   document.body.innerHTML = '<div>Pushed: false</div>';
   corgi.hydrateElement(document.body, <Flipper />);
@@ -770,7 +799,6 @@ function EvilReducer(
 
   if (state.count === 0) {
     Promise.resolve().then(() => {
-      debugger;
       updateState({count: 1});
     });
   } else if (state.count === 1) {
@@ -794,6 +822,68 @@ function EvilReducer(
     );
   } else {
     return 'what';
+  }
+}
+
+function FragmentComponent() {
+  return <><span>shown</span></>;
+}
+
+function Holder({text}: {text: string}) {
+  return <><span>{text}</span></>;
+}
+
+// Removes one fragment and adds a new sibling in the same render. The new sibling must land
+// between the surviving fragment and the tail. Set `empty` to make the removed fragment render
+// nothing, which is the harder case: it has no DOM node of its own to remove.
+function FragmentDropper(
+    {empty}: {empty: boolean},
+    state: {count: number}|undefined,
+    updateState: (newState: {count: number}) => void) {
+  if (!state) {
+    state = {
+      count: 0,
+    }
+  }
+
+  const count = state.count;
+  if (count < 1) {
+    Promise.resolve().then(() => {
+      updateState({count: count + 1});
+    });
+  }
+
+  const first = empty ? <></> : <Holder key="a" text="a" />;
+  const second = empty ? <></> : <Holder key="b" text="b" />;
+  const kids = count === 0 ? [first, second] : [second];
+  const added = count === 1 ? [<span key="new">new</span>] : [];
+  return <div><>{kids}</>{added}<span key="tail">tail</span></div>;
+}
+
+// Shown on even counts and gone on odd ones, twice over, so that the toggle runs past the first
+// removal and back in again.
+function FragmentToggler(
+    {siblings}: {siblings: boolean},
+    state: {count: number}|undefined,
+    updateState: (newState: {count: number}) => void) {
+  if (!state) {
+    state = {
+      count: 0,
+    }
+  }
+
+  const count = state.count;
+  if (count < 4) {
+    Promise.resolve().then(() => {
+      updateState({count: count + 1});
+    });
+  }
+
+  const toggled = count % 2 === 0 ? <FragmentComponent /> : <></>;
+  if (siblings) {
+    return <div><span>before</span>{toggled}<span>after</span></div>;
+  } else {
+    return <div>{toggled}</div>;
   }
 }
 

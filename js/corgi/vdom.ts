@@ -37,6 +37,7 @@ interface FactorySource {
 export interface Listener {
   createdElement(element: Element, props: Properties): void;
   patchedElement(element: Element, from: Properties, to: Properties): void;
+  // Called once for the root of each removed subtree. It is not called for the descendants.
   removedNode(node: Node): void;
 }
 
@@ -495,7 +496,7 @@ function patchChildren(
       const fragmentPlaceholder = wasElement.placeholder;
       const result =
           patchChildren(parent, wasElement.childHandles, isElement.children, fragmentPlaceholder);
-      last = result?.last ?? last;
+      last = result.last ?? last;
       // Mutate the existing record rather than swapping in a new one, the way
       // patchNode does for regular elements. Every render mints a fresh handle
       // and the cache fast path above aliases the new handle onto this very
@@ -516,7 +517,7 @@ function patchChildren(
     } else if (wasElement.self === undefined) {
       const result =
           patchChildren(parent, wasElement.childHandles, [isElement], wasElement.placeholder);
-      last = result?.last ?? last;
+      last = result.last ?? last;
       arrays.pushInto(newHandles, result.childHandles);
     } else if (!(isElement instanceof Object)) {
       const handle = createHandle();
@@ -535,7 +536,7 @@ function patchChildren(
       const fragmentPlaceholder = new Text('');
       const result =
           patchChildren(parent, [wasHandle], isElement.children, fragmentPlaceholder);
-      last = result?.last ?? last;
+      last = result.last ?? last;
       createdElements.set(
           handle, {
             parent,
@@ -557,23 +558,24 @@ function patchChildren(
     parent.removeChild(placeholder);
   }
 
+  if (placeholder && is.length === 0) {
+    // An empty fragment still needs one node in the DOM to mark where it is, so that the next
+    // render has somewhere to insert. That node is the placeholder. Put it in now, while the old
+    // content is still there to position it against.
+    if (was.length > 0) {
+      checkArgument(initialAnchor !== placeholder, 'Fragment children have no DOM nodes');
+      parent.insertBefore(placeholder, initialAnchor);
+    } else {
+      checkArgument(
+          placeholder.parentNode === parent,
+          'Empty fragment placeholder is not in the DOM');
+    }
+    last = placeholder;
+  }
+
   for (let i = 0; i < was.length; i++) {
     if (claimed[i]) continue;
-    const wasElement = checkExists(createdElements.get(was[i]));
-
-    if (wasElement.self === undefined) {
-      patchChildren(parent, wasElement.childHandles, [], wasElement.placeholder);
-      last = wasElement.placeholder ?? last;
-    } else {
-      if (placeholder) {
-        parent.insertBefore(placeholder, wasElement.self);
-        last = placeholder;
-      }
-      parent.removeChild(wasElement.self);
-      for (const listener of listeners) {
-        listener.removedNode(wasElement.self);
-      }
-    }
+    removeElement(parent, checkExists(createdElements.get(was[i])));
   }
 
   return {
@@ -601,7 +603,7 @@ function matchChildren(
       // checkUniqueKeys; a dup here means our own bookkeeping went sideways.
       checkArgument(
           !wasKeyToIndex.has(k),
-          `Duplicate key '${k}' in vdom previous siblings (corgi bug)`);
+          `Duplicate key '${k}' in vdom previous siblings`);
       wasKeyToIndex.set(k, i);
     }
   }
@@ -662,6 +664,33 @@ function* gatherDomNodes(physical: PhysicalElement): Generator<Node, void, void>
   for (const handle of physical.childHandles) {
     const child = createdElements.get(handle);
     if (child) yield* gatherDomNodes(child);
+  }
+}
+
+// Removes every DOM node an element put on the page, including the placeholders that mark its
+// empty fragments.
+function removeElement(parent: Element, physical: PhysicalElement): void {
+  if (physical.self !== undefined) {
+    parent.removeChild(physical.self);
+    for (const listener of listeners) {
+      listener.removedNode(physical.self);
+    }
+    return;
+  }
+
+  for (const handle of physical.childHandles) {
+    const child = createdElements.get(handle);
+    if (child) {
+      removeElement(parent, child);
+    }
+  }
+
+  if (physical.childHandles.length === 0) {
+    const ownPlaceholder = checkExists(physical.placeholder);
+    checkArgument(
+        ownPlaceholder.parentNode === parent,
+        'Empty fragment placeholder is not in the DOM');
+    parent.removeChild(ownPlaceholder);
   }
 }
 
