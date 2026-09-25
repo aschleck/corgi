@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "allowJs": true,
-    "baseUrl": ".",
     "composite": true,
     "esModuleInterop": true, // recommended by esbuild
     "isolatedModules": true, // recommended by esbuild
@@ -12,6 +11,10 @@
     "moduleResolution": "bundler",
     "strict": true,
     "target": "es2022",
+    "types": ["*"],
+    "paths": {
+      "*": ["./*"]
+    },
   },
   // Workaround https://github.com/microsoft/TypeScript/issues/59036
   "exclude": [],

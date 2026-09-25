@@ -112,12 +112,13 @@ def c_ts_project(
         allow_empty=True,
         exclude = test_srcs or ["*.test.ts", "*.test.tsx"]
     )
+    has_css = len(native.glob(["*.css"], allow_empty=True)) > 0
 
     ts_project(
         name = name,
         srcs = srcs,
         data = data,
-        deps = deps,
+        deps = (deps or []) + (["@dev_april_corgi//build_defs:css_types"] if has_css else []),
         tags = tags,
         target_compatible_with = target_compatible_with,
         testonly = testonly,
@@ -133,7 +134,7 @@ def c_ts_project(
         visibility = visibility,
     )
 
-    if len(native.glob(["*.css"], allow_empty=True)):
+    if has_css:
         js_library(
             name = "css",
             srcs = native.glob(["*.css"]),
