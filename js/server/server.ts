@@ -51,8 +51,9 @@ global.window = {
       requestContext.set('title', title);
     },
   },
-  devicePixelRation: 1,
+  encodeURIComponent,
   location: {
+    pathname: 'hardcoded-do-not-use',
     search: 'hardcoded-do-not-use',
   },
 } as any;
