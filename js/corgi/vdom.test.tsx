@@ -1409,3 +1409,77 @@ test('writes fill and stroke on an svg for its shapes to inherit', () => {
   expect(svg.getAttribute('stroke')).toBe('red');
   expect(svg.getAttribute('stroke-width')).toBe('2');
 });
+
+test('keeps a sibling\'s state when a component appears and disappears before it', async () => {
+  corgi.appendElement(document.body, <PanelBeforeSibling />);
+  await waitSettled();
+  const sibling = () => document.body.querySelector('[data-sibling]')!;
+  const togglePanel = () => (document.body.querySelector('[data-panel]') as HTMLElement).click();
+
+  (sibling() as HTMLButtonElement).click();
+  await waitMs(10);
+  togglePanel();
+  await waitMs(10);
+  expect(document.body.innerHTML).toContain('<div>panel</div>');
+  expect(sibling().getAttribute('data-sibling')).toBe('on');
+
+  togglePanel();
+  await waitMs(10);
+  expect(document.body.innerHTML).not.toContain('<div>panel</div>');
+  expect(sibling().getAttribute('data-sibling')).toBe('on');
+});
+
+function PanelBeforeSibling(
+    {}: {},
+    state: {open: boolean}|undefined,
+    updateState: (s: {open: boolean}) => void) {
+  if (!state) state = {open: false};
+  return <div>
+    <button
+        data-panel
+        js={corgi.bind({
+          controller: ToggleController,
+          events: {click: 'toggle'},
+          state: [state, updateState],
+        })}
+    />
+    {state.open ? <TrailingPanel /> : ''}
+    <Sibling tick={0} />
+  </div>;
+}
+
+test('matches state by key when a same-typed sibling disappears before it', async () => {
+  corgi.appendElement(document.body, <KeyedSiblings />);
+  await waitSettled();
+  const siblings = () => [...document.body.querySelectorAll('[data-sibling]')];
+  const toggleFirst = () => (document.body.querySelector('[data-panel]') as HTMLElement).click();
+
+  (siblings()[1] as HTMLButtonElement).click();
+  await waitMs(10);
+  toggleFirst();
+  await waitMs(10);
+  expect(siblings().map(s => s.getAttribute('data-sibling'))).toEqual(['on']);
+
+  toggleFirst();
+  await waitMs(10);
+  expect(siblings().map(s => s.getAttribute('data-sibling'))).toEqual(['off', 'on']);
+});
+
+function KeyedSiblings(
+    {}: {},
+    state: {open: boolean}|undefined,
+    updateState: (s: {open: boolean}) => void) {
+  if (!state) state = {open: true};
+  return <div>
+    <button
+        data-panel
+        js={corgi.bind({
+          controller: ToggleController,
+          events: {click: 'toggle'},
+          state: [state, updateState],
+        })}
+    />
+    {state.open ? <Sibling key="a" tick={0} /> : ''}
+    <Sibling key="b" tick={0} />
+  </div>;
+}

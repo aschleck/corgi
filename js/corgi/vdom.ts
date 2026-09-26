@@ -107,18 +107,15 @@ export function createVirtualElement(
     };
 
     const lastTrace = lastCreationTrace[lastCreationTrace.length - 1];
-    const lastHandle = lastTrace?.shift();
-    const lastPhysical = lastHandle ? createdElements.get(lastHandle) : undefined;
-    const lastFactorySource = lastPhysical?.factorySource;
-    const lastFactory = lastFactorySource?.factory;
+    const lastPhysical = lastTrace ? claimPrior(lastTrace, element, props?.key) : undefined;
 
     let state;
     let priorChildTrace: Handle[];
-    if (lastFactory && deepEqual(lastFactory, element)) {
-      state = lastFactorySource.state;
+    if (lastPhysical) {
+      state = lastPhysical.factorySource?.state;
       // Same factory at this position: reuse its children's trace so nested
       // function-element state is preserved across re-renders.
-      priorChildTrace = lastPhysical ? [...lastPhysical.childTrace] : [];
+      priorChildTrace = [...lastPhysical.childTrace];
     } else {
       // A different element (or nothing) previously occupied this position. Its
       // children are unrelated to ours, so we must NOT scope our nested lookups
@@ -176,6 +173,23 @@ export function createVirtualElement(
       factorySource: undefined,
     };
   }
+}
+
+// Takes the first element in the previous render's trace made by the same factory with the same
+// key, dropping the entries before it. A component that appears conditionally finds no match and
+// takes nothing, or else every function element after it would read the state of the one before.
+function claimPrior(
+    trace: Handle[], factory: ElementFactory, key: string|undefined): PhysicalElement|undefined {
+  const index = trace.findIndex(handle => {
+    const physical = createdElements.get(handle);
+    return physical?.key === key && deepEqual(physical?.factorySource?.factory, factory);
+  });
+  if (index < 0) {
+    return undefined;
+  }
+  const physical = createdElements.get(trace[index]);
+  trace.splice(0, index + 1);
+  return physical;
 }
 
 export function appendElement(parent: Element, child: VElementOrPrimitive): void {
