@@ -1331,3 +1331,71 @@ function Answer({answer}: {answer: string|undefined}) {
   }
   return <table>{answer}</table>;
 }
+
+test('patches a trailing child from a string to a component in place', async () => {
+  corgi.appendElement(document.body, <StringFlipper shown={[false, true]} />);
+  await waitSettled();
+  expect(document.body.innerHTML)
+      .toBe('<div><span>head</span><span>list</span><div>panel</div></div>');
+});
+
+test('patches a trailing child from a component back to a string', async () => {
+  corgi.appendElement(document.body, <StringFlipper shown={[true, false, true]} />);
+  await waitSettled();
+  expect(document.body.innerHTML)
+      .toBe('<div><span>head</span><span>list</span><div>panel</div></div>');
+});
+
+test('hydrates a trailing empty string and patches it to a component in place', async () => {
+  document.body.innerHTML = '<div><span>head</span><span>list</span></div>';
+  corgi.hydrateElement(document.body, <StringFlipper shown={[false, true]} />);
+  await waitSettled();
+  expect(document.body.innerHTML)
+      .toBe('<div><span>head</span><span>list</span><div>panel</div></div>');
+});
+
+interface StringFlipperState {
+  step: number;
+}
+
+// The shape of a sidebar: a header and a list, then a panel that is an empty string until something
+// is selected.
+function StringFlipper(
+    {shown}: {shown: boolean[]},
+    state: StringFlipperState|undefined,
+    updateState: (newState: StringFlipperState) => void) {
+  if (!state) {
+    state = {step: 0};
+  }
+
+  const step = state.step;
+  if (step + 1 < shown.length) {
+    Promise.resolve().then(() => {
+      updateState({step: step + 1});
+    });
+  }
+
+  return <>
+    <div>
+      <span>head</span>
+      <span>list</span>
+      {shown[step] ? <TrailingPanel /> : ''}
+    </div>
+  </>;
+}
+
+function TrailingPanel() {
+  return <div>panel</div>;
+}
+
+test('hydrates a leading empty fragment before its siblings', async () => {
+  document.body.innerHTML = '<div><span>after</span></div>';
+  corgi.hydrateElement(document.body, <LeadingEmpty />);
+  await waitSettled();
+  expect(document.body.firstChild?.childNodes[0]?.nodeType).toBe(Node.TEXT_NODE);
+  expect(document.body.innerHTML).toBe('<div><span>after</span></div>');
+});
+
+function LeadingEmpty() {
+  return <div><></><span>after</span></div>;
+}

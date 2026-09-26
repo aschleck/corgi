@@ -206,9 +206,9 @@ function hydrateElementRecursively(
     let node: Node;
     if (element === '') {
       node = new Text('');
-      parent.insertBefore(node, left?.nextSibling ?? parent.childNodes[0]);
+      parent.insertBefore(node, nodeAfter(parent, left));
     } else {
-      node = checkExists(left?.nextSibling ?? parent.childNodes[0]);
+      node = checkExists(nodeAfter(parent, left));
       checkArgument(node instanceof Text, 'Node should be text');
       // When passed from the server, \r\n turns into \n
       const need = String(element).replaceAll('\r\n', '\n');
@@ -251,7 +251,7 @@ function hydrateElementRecursively(
 
     const placeholder = new Text('');
     if (childHandles.length === 0) {
-      parent.insertBefore(placeholder, left?.nextSibling ?? null);
+      parent.insertBefore(placeholder, nodeAfter(parent, left));
       childLeft = placeholder;
     }
 
@@ -271,7 +271,7 @@ function hydrateElementRecursively(
       last: checkExists(childLeft),
     };
   } else {
-    const node = checkExists(left?.nextSibling ?? parent.childNodes[0]) as Element;
+    const node = checkExists(nodeAfter(parent, left)) as Element;
     checkArgument(element.tag === node.tagName.toLowerCase());
 
     const childHandles = [];
@@ -300,6 +300,12 @@ function hydrateElementRecursively(
       last: node,
     };
   }
+}
+
+// Returns where a hydrated node goes, which is after left or first when nothing is left of it. A null
+// nextSibling means left is the last child, so the node goes at the end rather than the front.
+function nodeAfter(parent: Element, left: Node|undefined): Node|null {
+  return left ? left.nextSibling : parent.firstChild;
 }
 
 class VdomCaching {
