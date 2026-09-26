@@ -1399,3 +1399,13 @@ test('hydrates a leading empty fragment before its siblings', async () => {
 function LeadingEmpty() {
   return <div><></><span>after</span></div>;
 }
+
+test('writes fill and stroke on an svg for its shapes to inherit', () => {
+  corgi.appendElement(
+      document.body,
+      <svg fill="none" stroke="red" strokeWidth="2" viewBox="0 0 1 1"><path d="M0 0" /></svg>);
+  const svg = document.body.querySelector('svg')!;
+  expect(svg.getAttribute('fill')).toBe('none');
+  expect(svg.getAttribute('stroke')).toBe('red');
+  expect(svg.getAttribute('stroke-width')).toBe('2');
+});
