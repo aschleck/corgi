@@ -1,4 +1,4 @@
-import {asFuture} from './futures';
+import {asFuture, rejectedFuture, resolvedFuture} from './futures';
 
 test('asFuture on resolved promise knows the value', async () => {
   const promise = Promise.resolve('cow');
@@ -35,6 +35,22 @@ test('asFuture on resolved promise chains a promise', async () => {
   expect(future2.ok).toEqual(true);
   expect(() => future2.error()).toThrow();
   expect(future2.value()).toEqual('cowcow');
+});
+
+test('resolved future rejects when then throws', () => {
+  const future = resolvedFuture('cow').then(() => {
+    throw 'noo';
+  });
+  expect(future.finished).toEqual(true);
+  expect(future.ok).toEqual(false);
+  expect(future.error()).toEqual('noo');
+});
+
+test('rejected future chains onRejected without extra waiting', () => {
+  const future = rejectedFuture<string>('noo').then(s => s, e => `${e} but fine`);
+  expect(future.finished).toEqual(true);
+  expect(future.ok).toEqual(true);
+  expect(future.value()).toEqual('noo but fine');
 });
 
 test('asFuture on rejected promise knows failure', async () => {

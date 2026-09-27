@@ -78,18 +78,22 @@ export function asFuture<T>(p: Promise<T>): Future<T> {
     return asFuture(p.finally(fn));
   };
   f.then = function(onResolved, onRejected) {
-    if (this.finished && this.ok && onResolved) {
+    if (this.finished) {
       if (this.ok && onResolved) {
-        const result = onResolved(this.value());
-        if (result instanceof Promise) {
-          const maybeFuture = result as Future<any>|Promise<any>;
-          if ('value' in maybeFuture) {
-            return maybeFuture;
+        try {
+          const result = onResolved(this.value());
+          if (result instanceof Promise) {
+            const maybeFuture = result as Future<any>|Promise<any>;
+            if ('value' in maybeFuture) {
+              return maybeFuture;
+            } else {
+              return asFuture(result);
+            }
           } else {
-            return asFuture(result);
+            return resolvedFuture(result);
           }
-        } else {
-          return resolvedFuture(result);
+        } catch (e: unknown) {
+          return rejectedFuture(e);
         }
       } else if (!this.ok && onRejected) {
         try {
