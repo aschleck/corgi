@@ -52,7 +52,9 @@ export interface Args {
 export interface State {
   active: number[];
   items: MenuEntries;
-  mode: 'normal' | 'searching';
+  mode: 'normal' | 'searching' | 'sheet';
+  // The submenus a sheet has drilled into, as indices from the top level down
+  opened: number[];
   search: string;
   searchIndex: number;
   searchResults: Array<{context: string[]; item: CheckboxMenuItem | MenuItem}>;
@@ -67,9 +69,20 @@ export class MenuController extends Controller<
   constructor(response: Response<MenuController>) {
     super(response);
 
+    this.fitPopups();
+
     if (this.state.mode === 'searching') {
       this.searchNeedle('');
     }
+  }
+
+  // Popup positions come from estimated sizes, which don't know the caller's classes, so after
+  // every render we measure what actually rendered and move it back inside the root. The render
+  // happens synchronously inside the flush that resolves this promise.
+  protected override updateState(newState: State): Promise<void> {
+    return super.updateState(newState).then(() => {
+      this.fitPopups();
+    });
   }
 
   close(): void {
@@ -92,7 +105,12 @@ export class MenuController extends Controller<
   keyPressed(e: CorgiEvent<typeof DOM_KEYBOARD>): void {
     const active = this.state.active;
     let newActive = undefined;
-    if (e.detail.key === 'Enter') {
+    if (this.state.mode === 'sheet') {
+      if (e.detail.key === 'Escape') {
+        this.close();
+      }
+      return;
+    } else if (e.detail.key === 'Enter') {
       this.select(active);
     } else if (e.detail.key === 'Escape') {
       this.close();
@@ -145,6 +163,26 @@ export class MenuController extends Controller<
 
   selected(e: CorgiEvent<typeof DOM_MOUSE>): void {
     this.select(this.calculateActive(e.actionElement));
+  }
+
+  sheetBack(): void {
+    this.updateState({
+      ...this.state,
+      opened: this.state.opened.slice(0, -1),
+    });
+  }
+
+  sheetSelected(e: CorgiEvent<typeof DOM_MOUSE>): void {
+    const index = checkExists(e.actionElement.data('index')).number();
+    const path = [...this.state.opened, index];
+    const {item} = this.findActiveItem(path);
+    if (item.kind === 'menu') {
+      if (!item.disabled) {
+        this.updateState({...this.state, opened: path});
+      }
+    } else {
+      this.select(path);
+    }
   }
 
   searchAction(): void {
@@ -259,6 +297,32 @@ export class MenuController extends Controller<
     });
   }
 
+  // Shifts each popup that overflows the root back inside it, and caps its size to the root's. We go
+  // in document order so a submenu is measured after its parent has already moved.
+  private fitPopups(): void {
+    const bound = this.root.getBoundingClientRect();
+    if (bound.width === 0 || bound.height === 0) {
+      return;
+    }
+
+    for (const popup of this.root.querySelectorAll<HTMLElement>('[data-menu-popup]')) {
+      popup.style.translate = '';
+      popup.style.maxWidth = `${bound.width}px`;
+      const rect = popup.getBoundingClientRect();
+      if (rect.height > bound.height) {
+        // A scrolling popup clips its submenus, but it's that or clipping its own items.
+        popup.style.maxHeight = `${bound.height}px`;
+        popup.style.overflowY = 'auto';
+      }
+      const dx = shiftInto(rect.left, rect.right, bound.left, bound.right);
+      const dy =
+          shiftInto(rect.top, rect.top + Math.min(rect.height, bound.height), bound.top, bound.bottom);
+      if (dx !== 0 || dy !== 0) {
+        popup.style.translate = `${dx}px ${dy}px`;
+      }
+    }
+  }
+
   private select(active: number[]): void {
     const {item} = this.findActiveItem(active);
     if (item.kind === 'menu_item' || item.kind === 'checkbox_menu_item') {
@@ -294,5 +358,15 @@ export class MenuController extends Controller<
       cursor = cursor.items[active[i]] as Menu;
     }
     return {parent: cursor, item: cursor.items[active[active.length - 1]]};
+  }
+}
+
+function shiftInto(low: number, high: number, boundLow: number, boundHigh: number): number {
+  if (high > boundHigh) {
+    return Math.max(boundHigh - high, boundLow - low);
+  } else if (low < boundLow) {
+    return boundLow - low;
+  } else {
+    return 0;
   }
 }

@@ -12,6 +12,10 @@ import {
   State,
 } from './menu_controller';
 
+// Below this a menu opens as a sheet along the bottom, because a phone has no hover to open
+// submenus and no room to put them beside their parents. 640 is Tailwind's sm breakpoint.
+const SHEET_MAX_WIDTH_PX = 640;
+
 export interface Position {
   x: number;
   y: number;
@@ -49,10 +53,19 @@ export function MenuElement(
     const size = estimateSize(items);
     const xFraction = size[0] / bound.width;
     const yFraction = size[1] / bound.height;
+    let mode: State['mode'];
+    if (bound.width < SHEET_MAX_WIDTH_PX) {
+      mode = 'sheet';
+    } else if (xFraction < 0.75 && yFraction < 0.75) {
+      mode = 'normal';
+    } else {
+      mode = 'searching';
+    }
     state = {
       active: [0],
       items,
-      mode: xFraction < 0.75 && yFraction < 0.75 ? 'normal' : 'searching',
+      mode,
+      opened: [],
       search: '',
       searchIndex: -1,
       searchResults: [],
@@ -98,6 +111,11 @@ export function MenuElement(
       )}
       {state.mode === 'searching' ? (
         <SearchMenu anchor={anchored} classes={classes} state={state} />
+      ) : (
+        <></>
+      )}
+      {state.mode === 'sheet' ? (
+        <SheetMenu classes={classes} state={state} />
       ) : (
         <></>
       )}
@@ -169,7 +187,7 @@ function SubMenu({
   const base = `absolute -top-1 w-max z-50 ${flip ? 'end-full' : 'start-full'}`;
   const cls = classes.popup ? `${base} ${classes.popup}` : base;
   return (
-    <div className={cls}>
+    <div className={cls} data={{menuPopup: ''}}>
       {items.map((item, i) => (
         <Entry
           accent={accent}
@@ -341,6 +359,71 @@ function iconContent(item: MenuEntry): VElementOrPrimitive {
   return '';
 }
 
+function SheetMenu({classes, state}: {classes: MenuClassNames; state: State}) {
+  let items = state.items;
+  let title = undefined;
+  for (const index of state.opened) {
+    const menu = items[index];
+    if (menu.kind !== 'menu') {
+      break;
+    }
+    items = menu.items;
+    title = menu.label;
+  }
+  const hasIcons = items.some(itemHasIcon);
+  // 44px is the smallest comfortable touch target
+  const base = 'flex flex-col justify-center min-h-11 outline-none';
+  const itemClass = classes.item ? `${base} ${classes.item}` : base;
+
+  // The backdrop is a sibling of the sheet so that maybeClickClose, which only closes on clicks
+  // that land on the root, still sees taps outside the sheet.
+  const sheet = 'absolute bottom-0 inset-x-0 max-h-[70%] overflow-y-auto z-50';
+  return (
+    <>
+      <div className="absolute bg-black/30 inset-0 pointer-events-none z-40" />
+      <div
+        className={classes.popup ? `${sheet} ${classes.popup}` : sheet}
+        style="border-bottom-left-radius: 0; border-bottom-right-radius: 0"
+      >
+        {title !== undefined ? (
+          <div
+            className={itemClass}
+            unboundEvents={{click: 'sheetBack'}}
+          >
+            <div className="flex items-center">
+              <div className="w-4 shrink-0">‹</div>
+              <div className="font-bold">{title}</div>
+            </div>
+          </div>
+        ) : (
+          <></>
+        )}
+        {items.map((item, i) => {
+          if (item.kind === 'divider') {
+            return <div className={classes.divider ?? ''} />;
+          }
+
+          const data: {[k: string]: string} = {index: String(i)};
+          if (item.disabled) data.disabled = '';
+          return (
+            <div
+              className={itemClass}
+              data={data}
+              unboundEvents={{click: 'sheetSelected'}}
+            >
+              <div className="flex items-center">
+                {hasIcons ? <div className="w-4 shrink-0">{iconContent(item)}</div> : null}
+                <div>{item.label}</div>
+                {item.kind === 'menu' ? <div className="ms-auto ps-4">›</div> : null}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
 function SearchMenu({
   anchor,
   classes,
@@ -353,7 +436,11 @@ function SearchMenu({
   const base = 'absolute start-full -top-1 w-max z-50 max-h-72 overflow-y-auto';
   const cls = classes.popup ? `${base} ${classes.popup}` : base;
   return (
-    <div className={cls} style={`left: ${anchor[0]}px; top: ${anchor[1]}px`}>
+    <div
+      className={cls}
+      data={{menuPopup: ''}}
+      style={`left: ${anchor[0]}px; top: ${anchor[1]}px`}
+    >
       <Input
         autofocus
         unboundEvents={{
