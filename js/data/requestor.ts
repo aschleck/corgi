@@ -10,7 +10,8 @@ import {
 } from '@bufbuild/protobuf';
 
 import {checkExhaustive} from '../common/asserts';
-import {Future, asFuture, resolvedFuture} from '../common/futures';
+import {deepEqual} from '../common/comparisons';
+import {Future, asFuture, rejectedFuture, resolvedFuture} from '../common/futures';
 import {requestDataBatch as ssrRequestDataBatch, ServerResponse, initialData} from '../server/ssr_aware';
 
 import {putCache} from './caching';
@@ -77,6 +78,9 @@ type RawBackends = {
 export class DataRequestor<B extends RawBackends> {
 
   private readonly middleware: Middleware[];
+  // The browser's first render has to see the same rejection the server did or else hydration
+  // diverges, but a retry should reach the server, so each is used once.
+  private readonly initialErrors: Array<[Request<B>, number]>;
   private readonly types: FqMethods<B>;
   private requestFuture: Future<ServerResponse[]> | undefined;
   private requestQueue: Array<Request<B>> | undefined;
@@ -92,6 +96,7 @@ export class DataRequestor<B extends RawBackends> {
       )
     ) as typeof this.types;
 
+    this.initialErrors = [];
     for (const [{method, request}, response] of initialData()) {
       const type = this.getType(method as keyof FqMethods<B>);
       if (response.kind === 'result') {
@@ -99,6 +104,14 @@ export class DataRequestor<B extends RawBackends> {
           method,
           protoFromJson(type.request, request),
           protoFromJson(type.response, response.value));
+      } else if (response.kind === 'error') {
+        const key = {
+          method: method as keyof FqMethods<B> & string,
+          request: protoFromJson(type.request, request),
+        };
+        this.initialErrors.push([key, response.code]);
+      } else {
+        checkExhaustive(response);
       }
     }
   }
@@ -114,6 +127,12 @@ export class DataRequestor<B extends RawBackends> {
   >(method: K, request: Req): Future<Resp> {
     const schema = this.getType(method).request;
     let munged = protoCreate(schema, request);
+    const initialError =
+        this.initialErrors.findIndex(([key]) => deepEqual(key, {method, request: munged}));
+    if (initialError >= 0) {
+      const [, code] = this.initialErrors.splice(initialError, 1)[0];
+      return rejectedFuture(new Error(`Response failed with code ${code}`));
+    }
     const munges = Array(this.middleware.length);
     for (let i = this.middleware.length - 1; i >= 0; --i) {
       const actor = this.middleware[i];
