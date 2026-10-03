@@ -255,6 +255,7 @@ export interface RectProperties
 // Fill and stroke set here are inherited by every shape inside that doesn't set its own.
 export interface SVGProperties extends SVGFilledProperties, SVGStrokedProperties, Properties {
   height?: number|string;
+  preserveAspectRatio?: string;
   viewBox?: string;
   width?: number|string;
 }
