@@ -53,6 +53,20 @@ test('rejected future chains onRejected without extra waiting', () => {
   expect(future.value()).toEqual('noo but fine');
 });
 
+test('rejected future passes through then without onRejected', () => {
+  const future = rejectedFuture<string>('noo').then(s => s + s);
+  expect(future.finished).toEqual(true);
+  expect(future.ok).toEqual(false);
+  expect(future.error()).toEqual('noo');
+});
+
+test('resolved future passes through then without onResolved', () => {
+  const future = resolvedFuture('cow').then(undefined, () => 'moo');
+  expect(future.finished).toEqual(true);
+  expect(future.ok).toEqual(true);
+  expect(future.value()).toEqual('cow');
+});
+
 test('asFuture on rejected promise knows failure', async () => {
   const promise = Promise.reject('noo');
   const future = asFuture(promise);

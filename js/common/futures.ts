@@ -111,6 +111,10 @@ export function asFuture<T>(p: Promise<T>): Future<T> {
         } catch (e: unknown) {
           return rejectedFuture(e);
         }
+      } else {
+        // The settled side has no handler, so the outcome passes through as it is. Waiting on p
+        // instead would leave the result unsettled for a tick, which a server render never sees.
+        return this as unknown as Future<any>;
       }
     }
 
