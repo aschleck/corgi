@@ -22,10 +22,16 @@ interface VElement {
 
 export type VElementOrPrimitive = VElement|number|string;
 
+/**
+ * What a function component returns. Like React, it may return an array of siblings, which render
+ * as a fragment would. Nested arrays flatten, as children do.
+ */
+export type Rendered = VElementOrPrimitive|readonly Rendered[];
+
 export type ElementFactory = (
   props: Properties,
   state: unknown|undefined,
-  updateState: (newState: unknown) => void) => VElementOrPrimitive;
+  updateState: (newState: unknown) => void) => Rendered;
 
 interface FactorySource {
   factory: ElementFactory;
@@ -935,16 +941,22 @@ function createHandle(): Handle {
   return {id: ++nextElementId} as Handle;
 }
 
-function deepFlatten<V>(items: Array<V | V[]>): V[] {
+type Nested<V> = V|readonly Nested<V>[];
+
+function deepFlatten<V>(items: readonly Nested<V>[]): V[] {
   const flattened: V[] = [];
   for (const item of items) {
-    if (Array.isArray(item)) {
+    if (isNested(item)) {
       flattened.push(...deepFlatten(item));
     } else if (item !== undefined && item !== null && item !== false && item !== true) {
       flattened.push(item);
     }
   }
   return flattened;
+}
+
+function isNested<V>(item: Nested<V>): item is readonly Nested<V>[] {
+  return Array.isArray(item);
 }
 
 function findLastChildOrPlaceholder(element: PhysicalElement): Node {
@@ -981,7 +993,11 @@ export function Fragment({children}: {children: VElementOrPrimitive[]}): VElemen
   };
 }
 
-function wrap(element: VElementOrPrimitive): VElement {
-  return Fragment({children: [element]});
+/**
+ * Holds what a function component returned in a fragment. An array is flattened as children are,
+ * so that each of its elements is a child and not the array itself.
+ */
+function wrap(element: Rendered): VElement {
+  return Fragment({children: deepFlatten([element])});
 }
 

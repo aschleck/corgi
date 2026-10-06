@@ -22,6 +22,17 @@ test('adds primitive function to dom', () => {
   expect(document.body.innerHTML).toBe('hello');
 });
 
+// Like React, a component may return an array. Each element is a sibling, as in a fragment.
+test('adds function that returns an array to dom', () => {
+  corgi.appendElement(document.body, <div><Siblings /></div>);
+  expect(document.body.innerHTML).toBe('<div><span>first</span><div>second</div></div>');
+});
+
+test('flattens nested arrays a function returns', () => {
+  corgi.appendElement(document.body, <div><NestedSiblings /></div>);
+  expect(document.body.innerHTML).toBe('<div><span>one</span>two<div>three</div></div>');
+});
+
 test('adds number to dom', () => {
   corgi.appendElement(document.body, 2.718);
   expect(document.body.innerHTML).toBe('2.718');
@@ -362,6 +373,14 @@ test('nested function-element state does not leak when the parent changes type',
 
 function SimpleString() {
   return 'hello';
+}
+
+function Siblings() {
+  return [<span key="first">first</span>, <div key="second">second</div>];
+}
+
+function NestedSiblings() {
+  return [<span key="one">one</span>, ['two', [<div key="three">three</div>]]];
 }
 
 // Grandparent has a bump button and two siblings: a wrapper that nests Leaf,
@@ -1258,6 +1277,16 @@ test('keys: duplicate keys among siblings throws on initial mount', () => {
   }).toThrow(/Duplicate key 'dup'/);
 });
 
+test('keys: duplicate keys in an array a function returns throws', () => {
+  expect(() => {
+    corgi.appendElement(document.body, <div><DuplicateSiblings /></div>);
+  }).toThrow(/Duplicate key 'dup'/);
+});
+
+function DuplicateSiblings() {
+  return [<span key="dup">first</span>, <span key="dup">second</span>];
+}
+
 test('keys: changing the key drops the old element and creates a new one', async () => {
   corgi.appendElement(
       document.body,
@@ -1428,6 +1457,47 @@ test('keeps a sibling\'s state when a component appears and disappears before it
   expect(document.body.innerHTML).not.toContain('<div>panel</div>');
   expect(sibling().getAttribute('data-sibling')).toBe('on');
 });
+
+// The same, with the component returning its children as an array rather than a fragment or an
+// element, so the array is patched as siblings when it grows and shrinks.
+test('keeps a sibling\'s state when an array a component returns grows and shrinks', async () => {
+  corgi.appendElement(document.body, <div><PanelBeforeSiblingArray /></div>);
+  await waitSettled();
+  const sibling = () => document.body.querySelector('[data-sibling]')!;
+  const togglePanel = () => (document.body.querySelector('[data-panel]') as HTMLElement).click();
+
+  (sibling() as HTMLButtonElement).click();
+  await waitMs(10);
+  togglePanel();
+  await waitMs(10);
+  expect(document.body.innerHTML).toContain('<div>panel</div>');
+  expect(sibling().getAttribute('data-sibling')).toBe('on');
+
+  togglePanel();
+  await waitMs(10);
+  expect(document.body.innerHTML).not.toContain('<div>panel</div>');
+  expect(sibling().getAttribute('data-sibling')).toBe('on');
+});
+
+function PanelBeforeSiblingArray(
+    {}: {},
+    state: {open: boolean}|undefined,
+    updateState: (s: {open: boolean}) => void) {
+  if (!state) state = {open: false};
+  return [
+    <button
+        key="toggle"
+        data-panel
+        js={corgi.bind({
+          controller: ToggleController,
+          events: {click: 'toggle'},
+          state: [state, updateState],
+        })}
+    />,
+    ...(state.open ? [<TrailingPanel key="panel" />] : []),
+    <Sibling key="sibling" tick={0} />,
+  ];
+}
 
 function PanelBeforeSibling(
     {}: {},

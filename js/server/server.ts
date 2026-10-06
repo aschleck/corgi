@@ -10,8 +10,8 @@ import fastify, {
 import { checkExists } from '../common/asserts';
 import { deepEqual } from '../common/comparisons';
 import { Future, resolvedFuture, unsettledFuture } from '../common/futures';
-import { Properties, VElementOrPrimitive, vdomCaching } from '../corgi';
-import { ElementFactory, FRAGMENT_MARKER, canonicalize } from '../corgi/vdom';
+import { Properties, vdomCaching } from '../corgi';
+import { ElementFactory, FRAGMENT_MARKER, Rendered, canonicalize } from '../corgi/vdom';
 
 import { DataKey } from './ssr_aware';
 
@@ -201,8 +201,10 @@ export async function serve<Server extends Http2SecureServer>(
   });
 }
 
-function render(element: VElementOrPrimitive): string {
-  if (element instanceof Object) {
+function render(element: Rendered): string {
+  if (isArray(element)) {
+    return element.map(render).join('');
+  } else if (element instanceof Object) {
     const properties = renderProperties(element.props);
     const spaceProperties = properties ? ` ${properties}` : '';
     if (element.tag === FRAGMENT_MARKER) {
@@ -217,6 +219,10 @@ function render(element: VElementOrPrimitive): string {
   } else {
     return renderText(element);
   }
+}
+
+function isArray(element: Rendered): element is readonly Rendered[] {
+  return Array.isArray(element);
 }
 
 const ESCAPES = {

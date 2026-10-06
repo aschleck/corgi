@@ -1,7 +1,14 @@
 import { AnyBoundController, UnboundEvents } from './binder';
+import { Rendered } from './vdom';
 
 declare global {
   namespace JSX {
+    // What may be a tag: an intrinsic element, or a function component. Declaring it makes tsc check
+    // what a component returns. Each parameter is `never` so that a component of any props and state
+    // fits.
+    type ElementType =
+        keyof IntrinsicElements|
+        ((props: never, state: never, updateState: never) => Rendered);
     // JSX-level attribute so `key` is allowed on function components too,
     // not just intrinsic elements. Consumed by the vdom; see Properties.key.
     interface IntrinsicAttributes {

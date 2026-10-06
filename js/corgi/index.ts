@@ -1,7 +1,7 @@
 export { bind } from './binder';
 export type { ButtonProperties, InputProperties, Properties } from './elements';
 export { appendElement, createVirtualElement, Fragment, hydrateElement, vdomCaching } from './vdom';
-export type { VElementOrPrimitive } from './vdom';
+export type { Rendered, VElementOrPrimitive } from './vdom';
 
 import { Binder } from './binder';
 import { addListener } from './vdom';
