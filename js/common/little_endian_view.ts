@@ -83,18 +83,20 @@ export class LittleEndianView {
     return r;
   }
 
+  // Protobuf writes a negative int32 or int64 as ten bytes, so we read every byte but keep only the
+  // low 32 bits, or else << shifts mod 32 and folds the high bytes back into them.
   getVarInt32(): number {
     let r = 0;
-    let v = this.view.getInt8(this.position);
-    this.position += 1;
     let shift = 0;
-    while ((v & 0x80) != 0) {
-      r |= (v & 0x7f) << shift;
-      shift += 7;
-      v = this.view.getInt8(this.position);
+    let v;
+    do {
+      v = this.view.getUint8(this.position);
       this.position += 1;
-    }
-    r |= v << shift;
+      if (shift < 32) {
+        r |= (v & 0x7f) << shift;
+      }
+      shift += 7;
+    } while ((v & 0x80) != 0);
     return r;
   }
 
