@@ -6,6 +6,7 @@ import { Input } from '../input';
 
 import {
   Args,
+  InfoMenuItem,
   MenuController,
   MenuEntries,
   MenuEntry,
@@ -28,6 +29,12 @@ export interface MenuClassNames {
   // data-active, data-accent, data-disabled — use Tailwind data-[…] variants.
   item?: string;
   divider?: string;
+  // Applied to a menu item's detail line
+  detail?: string;
+  // Applied to the column icons and checkmarks sit in, which is 16px wide with nothing after it
+  icon?: string;
+  // Applied to each info row in place of item, since an info row is never active or disabled
+  info?: string;
 }
 
 export function MenuElement(
@@ -38,6 +45,7 @@ export function MenuElement(
     classes,
     items,
     position,
+    trigger,
   }: {
     accent: number[];
     anchor: 'first_item' | 'top_left';
@@ -45,6 +53,7 @@ export function MenuElement(
     classes: MenuClassNames;
     items: MenuEntries;
     position: Position;
+    trigger?: Element;
   },
   state: State | undefined,
   updateState: (newState: State) => void,
@@ -81,11 +90,15 @@ export function MenuElement(
     throw checkExhaustive(anchor);
   }
 
-  const args: Args = {items};
+  const args: Args = {items, trigger};
 
+  // Only a sheet's backdrop takes pointer events, so that outside a popup the page keeps its hover,
+  // scrolling, and clicks while the menu is open. MenuController closes on presses outside.
   return (
     <div
-      className="absolute inset-0"
+      className={
+        state.mode === 'sheet' ? 'absolute inset-0' : 'absolute inset-0 pointer-events-none'
+      }
       js={corgi.bind({
         args,
         controller: MenuController,
@@ -184,7 +197,8 @@ function SubMenu({
   // The popup's containing block is the zero width div NormalMenu positions, so without an
   // intrinsic width it shrinks to fit nothing and wraps every label. estimateSize measures labels
   // unwrapped, so the clamping below assumes this too.
-  const base = `absolute -top-1 w-max z-50 ${flip ? 'end-full' : 'start-full'}`;
+  const base =
+    `absolute -top-1 pointer-events-auto w-max z-50 ${flip ? 'end-full' : 'start-full'}`;
   const cls = classes.popup ? `${base} ${classes.popup}` : base;
   return (
     <div className={cls} data={{menuPopup: ''}}>
@@ -241,14 +255,19 @@ function Entry({
   // ms-auto to sit flush right when the popup is forced wider by a
   // sibling, with ps-4 providing a fixed minimum gap.
   const iconSlot = hasIcons
-    ? <div className="w-4 shrink-0">{iconContent(item)}</div>
+    ? <div className={iconClass(classes)}>{iconContent(item)}</div>
     : null;
+  const baseItem = 'outline-none relative';
+  if (item.kind === 'info_menu_item') {
+    return <InfoRow base={baseItem} classes={classes} iconSlot={iconSlot} item={item} />;
+  }
+
   let element;
   if (item.kind === 'menu_item') {
     element = (
       <div className="flex items-center">
         {iconSlot}
-        <div>{item.label}</div>
+        <Label classes={classes} item={item} />
         {item.shortcut ? (
           <div className="ms-auto ps-4">{item.shortcut}</div>
         ) : null}
@@ -301,7 +320,6 @@ function Entry({
   if (isAccent) data.accent = '';
   if (isActive) data.active = '';
 
-  const baseItem = 'outline-none relative';
   const itemClass =
     item.kind === 'divider'
       ? baseItem
@@ -327,6 +345,45 @@ function Entry({
   );
 }
 
+function InfoRow({
+  base,
+  classes,
+  iconSlot,
+  item,
+}: {
+  base: string;
+  classes: MenuClassNames;
+  iconSlot: VElementOrPrimitive | null;
+  item: InfoMenuItem;
+}) {
+  return (
+    <div className={classes.info ? `${base} ${classes.info}` : base}>
+      <div className="flex items-center">
+        {iconSlot}
+        <div>{item.label}</div>
+        {item.value !== undefined ? (
+          <div className="ms-auto ps-4">{item.value}</div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function Label({classes, item}: {classes: MenuClassNames; item: MenuEntry}) {
+  if (item.kind === 'divider') {
+    return <></>;
+  } else if (item.kind === 'menu_item' && item.detail !== undefined) {
+    return (
+      <div className="flex flex-col">
+        <div>{item.label}</div>
+        <div className={classes.detail ?? ''}>{item.detail}</div>
+      </div>
+    );
+  } else {
+    return <div>{item.label}</div>;
+  }
+}
+
 // Local extents only — submenus open beside their parent, so they don't
 // contribute to the top-level popup's footprint (and including them
 // over-clamps it leftward when the menu is opened near the right edge).
@@ -339,8 +396,12 @@ function estimateSize(items: MenuEntries): [width: number, height: number] {
       height += 4;
       continue;
     }
-    width = Math.max(width, iconWidth + 8 * item.label.length + 32 + 8);
-    height += 24;
+    // An info row's value is an element we can't measure, so we guess it's about 8 characters.
+    const extra = item.kind === 'info_menu_item' && item.value !== undefined ? 64 : 0;
+    const detail = item.kind === 'menu_item' ? item.detail : undefined;
+    const characters = Math.max(item.label.length, detail?.length ?? 0);
+    width = Math.max(width, iconWidth + 8 * characters + extra + 32 + 8);
+    height += detail !== undefined ? 40 : 24;
   }
   return [width, height];
 }
@@ -351,9 +412,13 @@ function itemHasIcon(item: MenuEntry): boolean {
   return item.icon !== undefined;
 }
 
+function iconClass(classes: MenuClassNames): string {
+  return classes.icon ? `shrink-0 w-4 ${classes.icon}` : 'shrink-0 w-4';
+}
+
 function iconContent(item: MenuEntry): VElementOrPrimitive {
   if (item.kind === 'checkbox_menu_item') return item.checked ? '✓' : '';
-  if (item.kind === 'menu_item' || item.kind === 'menu') {
+  if (item.kind === 'menu_item' || item.kind === 'menu' || item.kind === 'info_menu_item') {
     return item.icon ?? '';
   }
   return '';
@@ -403,6 +468,13 @@ function SheetMenu({classes, state}: {classes: MenuClassNames; state: State}) {
             return <div className={classes.divider ?? ''} />;
           }
 
+          const iconSlot = hasIcons
+            ? <div className={iconClass(classes)}>{iconContent(item)}</div>
+            : null;
+          if (item.kind === 'info_menu_item') {
+            return <InfoRow base={base} classes={classes} iconSlot={iconSlot} item={item} />;
+          }
+
           const data: {[k: string]: string} = {index: String(i)};
           if (item.disabled) data.disabled = '';
           return (
@@ -412,8 +484,8 @@ function SheetMenu({classes, state}: {classes: MenuClassNames; state: State}) {
               unboundEvents={{click: 'sheetSelected'}}
             >
               <div className="flex items-center">
-                {hasIcons ? <div className="w-4 shrink-0">{iconContent(item)}</div> : null}
-                <div>{item.label}</div>
+                {iconSlot}
+                <Label classes={classes} item={item} />
                 {item.kind === 'menu' ? <div className="ms-auto ps-4">›</div> : null}
               </div>
             </div>
@@ -433,7 +505,8 @@ function SearchMenu({
   classes: MenuClassNames;
   state: State;
 }) {
-  const base = 'absolute start-full -top-1 w-max z-50 max-h-72 overflow-y-auto';
+  const base =
+    'absolute start-full -top-1 pointer-events-auto w-max z-50 max-h-72 overflow-y-auto';
   const cls = classes.popup ? `${base} ${classes.popup}` : base;
   return (
     <div

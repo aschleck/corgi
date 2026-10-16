@@ -1,4 +1,5 @@
 import { checkExhaustive, checkExists } from '../../common/asserts';
+import { disposeBoundElementsIn } from '../../corgi/binder';
 import { Controller, Response } from '../../corgi/controller';
 import { EmptyDeps } from '../../corgi/deps';
 import { QueryOne } from '../../corgi/dom';
@@ -27,10 +28,23 @@ export interface Menu {
 export interface MenuItem {
   kind: 'menu_item';
   label: string;
+  // A second, quieter line under the label
+  detail?: string;
   disabled?: boolean;
   icon?: VElementOrPrimitive;
   shortcut?: string;
   action: () => void;
+  // Called with true when the item becomes the active one and false when it stops being it, which
+  // includes the menu closing
+  onActive?: (active: boolean) => void;
+}
+
+// A row that shows something without doing anything, such as a reading with its value flush right
+export interface InfoMenuItem {
+  kind: 'info_menu_item';
+  label: string;
+  icon?: VElementOrPrimitive;
+  value?: VElementOrPrimitive;
 }
 
 export interface CheckboxMenuItem {
@@ -42,11 +56,14 @@ export interface CheckboxMenuItem {
   action: () => void;
 }
 
-export type MenuEntry = CheckboxMenuItem | Divider | Menu | MenuItem;
+export type MenuEntry = CheckboxMenuItem | Divider | InfoMenuItem | Menu | MenuItem;
 export type MenuEntries = MenuEntry[];
 
 export interface Args {
   items: MenuEntries;
+  // The element that opened the menu, whose presses are left to its own handler so that pressing
+  // it again can close the menu instead of closing and reopening it
+  trigger?: Element;
 }
 
 export interface State {
@@ -66,8 +83,28 @@ export class MenuController extends Controller<
   HTMLElement,
   State
 > {
+  private readonly triggerElement: Element|undefined;
+  private activeItem: MenuItem|undefined;
+
   constructor(response: Response<MenuController>) {
     super(response);
+    this.triggerElement = response.args.trigger;
+    this.activeItem = undefined;
+
+    // Binding waits a microtask, so a menu closed right after opening is already detached.
+    if (!this.root.isConnected) {
+      return;
+    }
+
+    // Capturing sees the press even when what it lands on stops it, and we let it carry on so that
+    // a press outside both closes the menu and does what it would have done anyway.
+    this.registerListener(document, 'pointerdown', e => {
+      this.pressed(e);
+    }, {capture: true});
+    this.registerDisposer(() => {
+      this.setActiveItem(undefined);
+    });
+    this.setActiveItem(activeItemIn(this.state));
 
     this.fitPopups();
 
@@ -80,15 +117,20 @@ export class MenuController extends Controller<
   // every render we measure what actually rendered and move it back inside the root. The render
   // happens synchronously inside the flush that resolves this promise.
   protected override updateState(newState: State): Promise<void> {
+    this.setActiveItem(activeItemIn(newState));
     return super.updateState(newState).then(() => {
       this.fitPopups();
     });
   }
 
+  // Removing the root doesn't dispose us, because only the vdom's own removals do that.
   close(): void {
     this.root.remove();
+    disposeBoundElementsIn(this.root);
   }
 
+  // The root only takes pointer events as a sheet's backdrop, which closes on the click instead of
+  // the press so that the click doesn't land on the page under it.
   maybeClickClose(e: CorgiEvent<typeof DOM_MOUSE>): void {
     if (e.targetElement.element() === this.root) {
       this.close();
@@ -125,18 +167,19 @@ export class MenuController extends Controller<
       if (item.kind === 'menu' && !item.disabled) {
         newActive = [...active, 0];
       }
-    } else if (e.detail.key === 'ArrowDown') {
+    } else if (e.detail.key === 'ArrowDown' || e.detail.key === 'ArrowUp') {
       const {parent} = this.findActiveItem(active);
-      newActive = active.slice(0, active.length - 1);
-      const current = active[active.length - 1];
+      const step = e.detail.key === 'ArrowDown' ? 1 : -1;
       const count = parent.items.length;
-      newActive.push((current + 1) % count);
-    } else if (e.detail.key === 'ArrowUp') {
-      const {parent} = this.findActiveItem(active);
-      newActive = active.slice(0, active.length - 1);
-      const current = active[active.length - 1];
-      const count = parent.items.length;
-      newActive.push((current - 1 + count) % count);
+      let next = active[active.length - 1];
+      // Dividers and info rows can't be chosen, so the keys pass over them.
+      for (let i = 0; i < count; ++i) {
+        next = (next + step + count) % count;
+        if (isSelectable(parent.items[next])) {
+          break;
+        }
+      }
+      newActive = [...active.slice(0, active.length - 1), next];
     } else if (e.detail.key.length === 1) {
       // .length === 1 is a simple check to avoid Meta, Shift, F12, etc
       return this.searchChanged({
@@ -249,7 +292,7 @@ export class MenuController extends Controller<
         if (maybeFirst) {
           results.push(maybeFirst);
         }
-      } else if (item.kind === 'divider') {
+      } else if (item.kind === 'divider' || item.kind === 'info_menu_item') {
         // skip
       } else {
         throw checkExhaustive(item);
@@ -332,6 +375,27 @@ export class MenuController extends Controller<
     }
   }
 
+  private pressed(e: PointerEvent): void {
+    const target = e.target;
+    if (!(target instanceof Node)) {
+      return;
+    }
+    if (this.root.contains(target) || this.triggerElement?.contains(target)) {
+      return;
+    }
+    this.close();
+  }
+
+  private setActiveItem(item: MenuItem|undefined): void {
+    if (item === this.activeItem) {
+      return;
+    }
+    const was = this.activeItem;
+    this.activeItem = item;
+    was?.onActive?.(false);
+    item?.onActive?.(true);
+  }
+
   private calculateActive(target: QueryOne): number[] {
     target.element().focus();
 
@@ -369,4 +433,24 @@ function shiftInto(low: number, high: number, boundLow: number, boundHigh: numbe
   } else {
     return 0;
   }
+}
+
+// The menu item that state's active path names, if the menu shows one as active
+function activeItemIn(state: State): MenuItem|undefined {
+  if (state.mode !== 'normal' || state.active.length === 0) {
+    return undefined;
+  }
+  let items = state.items;
+  let item: MenuEntry|undefined = undefined;
+  for (const index of state.active) {
+    item = items[index];
+    if (item?.kind === 'menu') {
+      items = item.items;
+    }
+  }
+  return item?.kind === 'menu_item' ? item : undefined;
+}
+
+function isSelectable(item: MenuEntry): boolean {
+  return item.kind === 'checkbox_menu_item' || item.kind === 'menu' || item.kind === 'menu_item';
 }
