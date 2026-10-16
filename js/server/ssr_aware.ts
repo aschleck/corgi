@@ -32,6 +32,9 @@ declare global {
       requestDataBatch(keys: DataKey[]): Future<ServerResponse[]>;
       language(): string;
       redirectTo(url: string): void;
+      setCanonicalPath(path: string): void;
+      setDescription(description: string): void;
+      setIndexable(indexable: boolean): void;
       setStatusCode(statusCode: number): void;
       setTitle(title: string): void;
     };
@@ -89,6 +92,31 @@ export function redirectTo(url: string): void {
   }
 }
 
+export function setCanonicalPath(path: string): void {
+  if (process.env.CORGI_FOR_BROWSER) {
+    headElement('link', 'rel', 'canonical')
+        .setAttribute('href', new URL(path, window.location.origin).href);
+  } else {
+    checkExists(window.SERVER_SIDE_RENDER).setCanonicalPath(path);
+  }
+}
+
+export function setDescription(description: string): void {
+  if (process.env.CORGI_FOR_BROWSER) {
+    headElement('meta', 'name', 'description').setAttribute('content', description);
+  } else {
+    checkExists(window.SERVER_SIDE_RENDER).setDescription(description);
+  }
+}
+
+export function setIndexable(indexable: boolean): void {
+  if (process.env.CORGI_FOR_BROWSER) {
+    headElement('meta', 'name', 'robots').setAttribute('content', indexable ? 'all' : 'noindex');
+  } else {
+    checkExists(window.SERVER_SIDE_RENDER).setIndexable(indexable);
+  }
+}
+
 export function setStatusCode(statusCode: number): void {
   if (!process.env.CORGI_FOR_BROWSER) {
     checkExists(window.SERVER_SIDE_RENDER).setStatusCode(statusCode);
@@ -103,3 +131,15 @@ export function setTitle(title: string): void {
   }
 }
 
+
+// Finds the element in <head> with the attribute, or adds one if the page didn't render it.
+function headElement(tag: string, key: string, value: string): Element {
+  const existing = document.head.querySelector(`${tag}[${key}="${value}"]`);
+  if (existing) {
+    return existing;
+  }
+  const element = document.createElement(tag);
+  element.setAttribute(key, value);
+  document.head.append(element);
+  return element;
+}

@@ -17,7 +17,10 @@ import { DataKey } from './ssr_aware';
 
 declare module '@fastify/request-context' {
   interface RequestContextData {
+    canonicalPath: string;
     cookies: string|undefined;
+    description: string;
+    indexable: boolean;
     requestDataBatch: (keys: DataKey[]) => Future<object[]>;
     language: string|undefined;
     redirectTo: string;
@@ -44,6 +47,15 @@ global.window = {
     redirectTo: function(url: string) {
       requestContext.set('redirectTo', url);
     },
+    setCanonicalPath: function(path: string) {
+      requestContext.set('canonicalPath', path);
+    },
+    setDescription: function(description: string) {
+      requestContext.set('description', description);
+    },
+    setIndexable: function(indexable: boolean) {
+      requestContext.set('indexable', indexable);
+    },
     setStatusCode: function(statusCode: number) {
       requestContext.set('statusCode', statusCode);
     },
@@ -58,7 +70,20 @@ global.window = {
   },
 } as any;
 
-export type PageFn = (content: string, title: string, escapedData: string) => string;
+// Every string except content and escapedData is escaped for HTML here, so the page can put it in
+// an attribute as is.
+export interface PageOptions {
+  // Relative to the site's origin, which only the page knows because we render at ssr.internal
+  canonicalPath: string|undefined;
+  content: string;
+  description: string|undefined;
+  // Escaped for a <script> rather than for HTML
+  escapedData: string;
+  indexable: boolean;
+  title: string;
+}
+
+export type PageFn = (options: PageOptions) => string;
 
 vdomCaching.disable();
 
@@ -175,12 +200,16 @@ export async function serve<Server extends Http2SecureServer>(
       return reply.redirect(encodeURI(redirectUrl), 302);
     }
 
-    const escapedData = JSON.stringify(requestedData).replace(/\//g, '\\/');
-    const result =
-        page(
-            render(content),
-            renderText(requestContext.get('title') ?? defaultTitle),
-            escapedData);
+    const canonicalPath = requestContext.get('canonicalPath');
+    const description = requestContext.get('description');
+    const result = page({
+      canonicalPath: canonicalPath === undefined ? undefined : renderText(canonicalPath),
+      content: render(content),
+      description: description === undefined ? undefined : renderText(description),
+      escapedData: JSON.stringify(requestedData).replace(/\//g, '\\/'),
+      indexable: requestContext.get('indexable') ?? true,
+      title: renderText(requestContext.get('title') ?? defaultTitle),
+    });
 
     const ifNoneMatch = request.headers['if-none-match'];
     const etag = '"' + crypto.createHash('md5').update(result).digest('base64') + '"';
