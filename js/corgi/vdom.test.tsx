@@ -22,6 +22,16 @@ test('adds primitive function to dom', () => {
   expect(document.body.innerHTML).toBe('hello');
 });
 
+test('prefers JSX children over spread children', () => {
+  corgi.appendElement(document.body, <ForwardProps />);
+  expect(document.body.innerHTML).toBe('<div><span>nested</span></div>');
+});
+
+test('keeps spread children when there are no JSX children', () => {
+  corgi.appendElement(document.body, <WrapChildren {...{children: [<span>spread</span>]}} />);
+  expect(document.body.innerHTML).toBe('<div><span>spread</span></div>');
+});
+
 // Like React, a component may return an array. Each element is a sibling, as in a fragment.
 test('adds function that returns an array to dom', () => {
   corgi.appendElement(document.body, <div><Siblings /></div>);
@@ -529,6 +539,11 @@ function Panel(
 
 function WrapChildren({children}: {children?: corgi.VElementOrPrimitive[]}) {
   return <div>{children}</div>;
+}
+
+// Spreads the children prop corgi hands it alongside children of its own
+function ForwardProps(props: {children?: corgi.VElementOrPrimitive[]}) {
+  return <WrapChildren {...props}><span>nested</span></WrapChildren>;
 }
 
 function Tree() {

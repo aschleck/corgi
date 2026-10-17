@@ -92,7 +92,7 @@ export function createVirtualElement(
       lastCreationTrace.push([...physical.childTrace]);
       let result;
       try {
-        result = wrap(element({children: flatChildren, ...props}, newState, updateState));
+        result = wrap(element(factoryProps(props, flatChildren), newState, updateState));
       } catch (e: unknown) {
         creationTrace.pop();
         throw e;
@@ -146,12 +146,7 @@ export function createVirtualElement(
     try {
       result =
           wrap(
-              element({
-                children: flatChildren,
-                ...props,
-              },
-              state,
-              updateState));
+              element(factoryProps(props, flatChildren), state, updateState));
     } catch (e: unknown) {
       creationTrace.pop();
       lastCreationTrace.pop();
@@ -676,6 +671,13 @@ function checkUniqueKeys(children: VElementOrPrimitive[]): void {
         `Duplicate key '${child.key}' in vdom siblings`);
     seen.add(child.key);
   }
+}
+
+function factoryProps(props: Properties|null, children: VElementOrPrimitive[]): Properties {
+  return {
+    ...props,
+    children: children.length > 0 || props?.children === undefined ? children : props.children,
+  };
 }
 
 function* gatherDomNodes(physical: PhysicalElement): Generator<Node, void, void> {
