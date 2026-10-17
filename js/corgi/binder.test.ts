@@ -297,6 +297,38 @@ test('unbound events find new controller', async () => {
   expect(state.clicked).toBe(false);
 });
 
+test('unbound events beside a controller find the parent controller', async () => {
+  const div = document.createElement('div');
+  document.body.append(div);
+  const a = document.createElement('a');
+  div.append(a);
+  const binder = new Binder();
+
+  const state = {innerClicked: false, outerClicked: false};
+  binder.createdElement(div, {
+    js: corgi.bind({
+      controller: NoisyController,
+      args: {clickCallback: () => {state.outerClicked = true;}},
+      state: [{}, (newState: {}) => {}],
+    }),
+  });
+  binder.createdElement(a, {
+    js: corgi.bind({
+      controller: NoisyController,
+      args: {clickCallback: () => {state.innerClicked = true;}},
+      state: [{}, (newState: {}) => {}],
+    }),
+    unboundEvents: {click: 'clicked'},
+  });
+  await waitSettled();
+
+  a.click();
+  await waitSettled();
+
+  expect(state.outerClicked).toBe(true);
+  expect(state.innerClicked).toBe(false);
+});
+
 // When the parent re-renders before a controller's debounced updateState
 // fires, the controller's stored response.state[1] used to keep pointing at
 // the original closure (which targets an orphaned vdom handle). The next

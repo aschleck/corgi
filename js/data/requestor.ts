@@ -75,6 +75,12 @@ type RawBackends = {
   }
 };
 
+export class DataRequestError extends Error {
+  constructor(readonly method: string, readonly code: number) {
+    super(`${method} response failed with code ${code}`);
+  }
+}
+
 export class DataRequestor<B extends RawBackends> {
 
   private readonly middleware: Middleware[];
@@ -131,7 +137,7 @@ export class DataRequestor<B extends RawBackends> {
         this.initialErrors.findIndex(([key]) => deepEqual(key, {method, request: munged}));
     if (initialError >= 0) {
       const [, code] = this.initialErrors.splice(initialError, 1)[0];
-      return rejectedFuture(new Error(`Response failed with code ${code}`));
+      return rejectedFuture(new DataRequestError(method, code));
     }
     const munges = Array(this.middleware.length);
     for (let i = this.middleware.length - 1; i >= 0; --i) {
@@ -149,7 +155,7 @@ export class DataRequestor<B extends RawBackends> {
         if (decision.response.kind === 'result') {
           return resolvedFuture(decision.response.value as Resp);
         } else if (decision.response.kind === 'error') {
-          throw new Error(`Request terminated in middleware with code ${decision.response.code}`);
+          return rejectedFuture(new DataRequestError(method, decision.response.code));
         } else {
           throw checkExhaustive(decision.response);
         }
@@ -175,7 +181,7 @@ export class DataRequestor<B extends RawBackends> {
         if (r.kind === 'result') {
           return r.value as Resp;
         } else if (r.kind === 'error') {
-          throw new Error(`Response failed with code ${r.code}`);
+          throw new DataRequestError(method, r.code);
         } else {
           throw checkExhaustive(r);
         }

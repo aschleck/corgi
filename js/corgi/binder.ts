@@ -149,9 +149,6 @@ export class Binder implements Listener {
   private promise: Promise<void>|undefined = undefined;
 
   createdElement(element: Element, props: Properties): void {
-    if (props.js && props.unboundEvents) {
-      throw new Error('Cannot specify both js and unboundEvents on the same element');
-    }
     if (props.js) {
       element.setAttribute('data-js', '');
       if (props.js.ref) {
@@ -163,7 +160,8 @@ export class Binder implements Listener {
         element: element as SupportedElement,
         js: props.js,
       })
-    } else if (props.unboundEvents) {
+    }
+    if (props.unboundEvents) {
       this.pushAction({
         kind: 'au',
         element: element as SupportedElement,
@@ -173,9 +171,6 @@ export class Binder implements Listener {
   }
 
   patchedElement(element: Element, from: Properties, to: Properties): void {
-    if (to.js && to.unboundEvents) {
-      throw new Error('Cannot specify both js and unboundEvents on the same element');
-    }
     if (from.js || to.js) {
       this.pushAction({
         kind: 'pc',
@@ -183,7 +178,8 @@ export class Binder implements Listener {
         from: from.js,
         to: to.js,
       });
-    } else if (from.unboundEvents || to.unboundEvents) {
+    }
+    if (from.unboundEvents || to.unboundEvents) {
       this.pushAction({
         kind: 'pu',
         element: element as SupportedElement,
@@ -248,7 +244,7 @@ function bindController(root: SupportedElement, spec: AnyBoundController): void 
       continue;
     }
 
-    bindEventListener(root, event, handler as string, disposer);
+    bindEventListener(root, event, handler as string, disposer, /* fromParent= */ false);
   }
 
   for (const [eventSpec, handler] of spec.events.corgi ?? []) {
@@ -290,20 +286,24 @@ function bindUnbound(element: SupportedElement, events: UnboundEvents): void {
       continue;
     }
 
-    bindEventListener(element, event, handler as string, disposer);
+    bindEventListener(element, event, handler as string, disposer, /* fromParent= */ true);
   }
 
   for (const [eventSpec, handler] of events.corgi ?? []) {
     // TODO: we used to check if root == e.srcElement and bail out if so. Why?
-    bindEventListener(element, qualifiedName(eventSpec), handler, disposer);
+    bindEventListener(
+        element, qualifiedName(eventSpec), handler, disposer, /* fromParent= */ true);
   }
 }
 
+// Unbound events start looking for their controller at the parent so that an element can carry
+// both its own controller and unbound events handled by an ancestor's.
 function bindEventListener(
     element: SupportedElement,
     event: string,
     handler: string,
-    disposer: Disposable): void {
+    disposer: Disposable,
+    fromParent: boolean): void {
   const cached: {
     root: SupportedElement|undefined;
     spec: AnyBoundController|undefined;
@@ -333,7 +333,7 @@ function bindEventListener(
     if (!cached.root || !cached.spec) {
       const root =
           parentFinder(
-              element,
+              fromParent ? element.parentElement as SupportedElement : element,
               (candidate: SupportedElement) => elementsToControllerSpecs.has(candidate));
       if (!root) {
         throw new Error(`Unable to find controller for event ${event}`);

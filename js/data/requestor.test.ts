@@ -3,7 +3,7 @@ import {StringValueSchema} from '@bufbuild/protobuf/wkt';
 import {Future, unsettledFuture} from '../common/futures';
 import {DataKey} from '../server/ssr_aware';
 
-import {DataRequestor} from './requestor';
+import {DataRequestError, DataRequestor} from './requestor';
 
 // The requestor only reads the schemas, so there's no service to describe.
 const BACKENDS = {
@@ -46,6 +46,9 @@ test('an error from the server render rejects the same request without fetching'
 
   expect(future.finished).toEqual(true);
   expect(future.ok).toEqual(false);
+  const error = future.error() as DataRequestError;
+  expect(error).toBeInstanceOf(DataRequestError);
+  expect(error.code).toEqual(404);
   expect(sent).toEqual([]);
 });
 
