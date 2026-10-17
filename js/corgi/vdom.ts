@@ -822,10 +822,12 @@ function patchProperties(element: Element, from: AnyProperties, to: AnyPropertie
         if (value === undefined) {
           element.removeAttribute(key);
         } else if (typeof value === 'boolean') {
-          if (canonical === 'checked') {
-            (element as HTMLInputElement).checked = value;
-          } else if (canonical === 'draggable') {
-            (element as HTMLElement).draggable = value;
+          if (canonical === 'checked' && element instanceof HTMLInputElement) {
+            element.checked = value;
+          } else if (canonical === 'selected' && element instanceof HTMLOptionElement) {
+            element.selected = value;
+          } else if (canonical === 'draggable' && element instanceof HTMLElement) {
+            element.draggable = value;
           } else if (value) {
             element.setAttribute(canonical, '');
           } else {

@@ -127,6 +127,19 @@ test('patch removes boolean attribute', async () => {
   expect(document.body.innerHTML).toBe('<input type="checkbox">');
 });
 
+// Browsers ignore the selected attribute on an option once the user has picked it.
+test('patch selects an option the user picked before', async () => {
+  corgi.appendElement(document.body, <SelectFlipper />);
+  await waitSettled();
+  const select = document.body.querySelector('select') as HTMLSelectElement;
+  // like the user picking them, which select.value doesn't stand in for
+  select.options[1].selected = true;
+  select.options[0].selected = true;
+  flipSelect('b');
+  await waitSettled();
+  expect(select.value).toBe('b');
+});
+
 test('patch modifies fragment after removed child', async () => {
   corgi.appendElement(document.body, <FragmentModifier1 />);
   await waitSettled();
@@ -576,6 +589,27 @@ function BooleanRemover(
   }
 
   return <input type="checkbox" checked={state.pushed ? undefined : true} />;
+}
+
+let flipSelect: (choice: string) => void = () => {};
+
+function SelectFlipper(
+    {}: {},
+    state: {choice: string}|undefined,
+    updateState: (newState: {choice: string}) => void) {
+  if (!state) {
+    state = {choice: 'a'};
+  }
+  flipSelect = choice => {
+    updateState({choice});
+  };
+
+  return <>
+    <select>
+      <option value="a" selected={state.choice === 'a' || undefined}>A</option>
+      <option value="b" selected={state.choice === 'b' || undefined}>B</option>
+    </select>
+  </>;
 }
 
 function FragmentModifier1(
