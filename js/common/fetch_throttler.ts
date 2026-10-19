@@ -9,13 +9,13 @@ export class FetchThrottler {
   private active: number;
   private queued: Array<() => void>;
 
-  constructor() {
+  constructor(private readonly maxInFlight: number = MAX_REQUESTS_IN_FLIGHT) {
     this.active = 0;
     this.queued = [];
   }
 
   fetch(input: RequestInfo, init: RequestInitWithSignal): Promise<Response> {
-    if (this.active < MAX_REQUESTS_IN_FLIGHT) {
+    if (this.active < this.maxInFlight) {
       return this.executeFetch(input, init);
     } else {
       return new Promise<void>((resolve, reject) => {
