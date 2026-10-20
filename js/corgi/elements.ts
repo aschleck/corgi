@@ -114,6 +114,7 @@ export interface AnchorProperties extends Properties {
 }
 
 export interface ButtonProperties extends Properties {
+  disabled?: boolean;
   type?: 'submit';
 }
 
