@@ -307,12 +307,10 @@ function renderAttribute(key: string, value: boolean|number|string|undefined|unk
     return [];
   } else if (typeof value === 'string') {
     rendered = renderText(value);
-  } else if (key === 'checked' && typeof value === 'boolean') {
-    if (value) {
-      return [key];
-    } else {
-      return [];
-    }
+  } else if (typeof value === 'boolean' && key !== 'draggable' && !key.startsWith('data-')) {
+    // A boolean attribute is on whenever it is present, so false leaves it out like
+    // vdom.ts#patchProperties does. draggable is "true" or "false", and data is a string.
+    return value ? [key] : [];
   } else {
     rendered = value;
   }
