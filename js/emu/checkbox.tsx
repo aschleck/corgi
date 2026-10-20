@@ -23,7 +23,7 @@ export function Checkbox(
   }
 
   return <>
-    <label className={'inline-block' + (className ? ` ${className}` : '')} {...props}>
+    <label className={'inline-flex items-center' + (className ? ` ${className}` : '')} {...props}>
       <input
           js={corgi.bind({
             controller: CheckboxController,
