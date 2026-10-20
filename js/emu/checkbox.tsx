@@ -5,6 +5,7 @@ import { CheckboxController, State } from './checkbox_controller';
 export type CheckboxProps = {
   ariaLabel?: string;
   checked?: boolean; // controls the box when set, rather than only starting it
+  indeterminate?: boolean;
   children?: corgi.VElementOrPrimitive[];
   className?: string;
   key?: string,
@@ -12,7 +13,7 @@ export type CheckboxProps = {
 } & corgi.Properties;
 
 export function Checkbox(
-    {ariaLabel, checked, children, className, key, ref, ...props}: CheckboxProps,
+    {ariaLabel, checked, children, className, indeterminate, key, ref, ...props}: CheckboxProps,
     state: State|undefined,
     updateState: (newState: State) => void) {
   if (!state) {
@@ -36,6 +37,7 @@ export function Checkbox(
           })}
           ariaLabel={ariaLabel}
           checked={checked ?? state.checked}
+          indeterminate={indeterminate ?? false}
           type="checkbox"
       />
       {children}

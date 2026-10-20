@@ -134,6 +134,7 @@ export interface BaseInputProperties extends Properties {
 
 export interface InputCheckboxProperties extends BaseInputProperties {
   checked?: boolean;
+  indeterminate?: boolean;
   type: 'checkbox';
 }
 

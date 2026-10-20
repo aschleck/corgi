@@ -302,7 +302,10 @@ function renderAttribute(key: string, value: boolean|number|string|undefined|unk
   }
 
   let rendered;
-  if (typeof value === 'string') {
+  // HTML has no indeterminate attribute, so hydrateElement sets the property.
+  if (key === 'indeterminate') {
+    return [];
+  } else if (typeof value === 'string') {
     rendered = renderText(value);
   } else if (key === 'checked' && typeof value === 'boolean') {
     if (value) {

@@ -298,6 +298,12 @@ function hydrateElementRecursively(
       childLeft = r.last ?? childLeft;
     }
 
+    // The server leaves indeterminate out because HTML only has the property.
+    const props = element.props as AnyProperties;
+    if (node instanceof HTMLInputElement && 'indeterminate' in props && props.indeterminate) {
+      node.indeterminate = true;
+    }
+
     createdElements.set(
         handle, {
           parent,
@@ -824,6 +830,8 @@ function patchProperties(element: Element, from: AnyProperties, to: AnyPropertie
         } else if (typeof value === 'boolean') {
           if (canonical === 'checked' && element instanceof HTMLInputElement) {
             element.checked = value;
+          } else if (canonical === 'indeterminate' && element instanceof HTMLInputElement) {
+            element.indeterminate = value;
           } else if (canonical === 'selected' && element instanceof HTMLOptionElement) {
             element.selected = value;
           } else if (canonical === 'draggable' && element instanceof HTMLElement) {
