@@ -31,6 +31,7 @@ export function Input(
     {
       autofocus,
       className,
+      disabled,
       forceValue,
       icon,
       inset,
@@ -75,6 +76,7 @@ export function Input(
           })}
           autofocus={autofocus}
           className="bg-transparent grow max-w-full"
+          disabled={disabled}
           name={name}
           placeholder={placeholder ?? ''}
           size={size}

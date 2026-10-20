@@ -3,8 +3,9 @@ import * as corgi from '../corgi';
 import { SelectController, State } from './select_controller';
 
 export function Select(
-    {className, options, ref, ...props}: {
+    {className, disabled, options, ref, ...props}: {
       className?: string;
+      disabled?: boolean;
       ref?: string,
       options: Array<{
         label: string;
@@ -22,6 +23,7 @@ export function Select(
     <label className={'inline-block' + (className ? ` ${className}` : '')} {...props}>
       <select
           className={'bg-transparent h-full w-full'}
+          disabled={disabled}
           js={corgi.bind({
             controller: SelectController,
             events: {

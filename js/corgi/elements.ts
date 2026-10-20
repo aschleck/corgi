@@ -54,7 +54,7 @@ declare global {
       pre: Properties;
       rect: RectProperties;
       section: Properties;
-      select: Properties;
+      select: SelectProperties;
       span: Properties;
       summary: Properties;
       svg: SVGProperties;
@@ -126,6 +126,7 @@ export interface ImageProperties extends Properties {
 }
 
 export interface BaseInputProperties extends Properties {
+  disabled?: boolean;
   name?: string;
   placeholder?: string;
   size?: number;
@@ -189,8 +190,13 @@ export type InputProperties =
   | InputRangeProperties;
 
 export interface OptionProperties extends Properties {
+  disabled?: boolean;
   selected?: true;
   value?: string;
+}
+
+export interface SelectProperties extends Properties {
+  disabled?: boolean;
 }
 
 export interface TdProperties extends Properties {
@@ -198,6 +204,7 @@ export interface TdProperties extends Properties {
 }
 
 export interface TextAreaProperties extends Properties {
+  disabled?: boolean;
   name?: string;
   placeholder?: string;
   value?: string;
