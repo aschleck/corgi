@@ -173,12 +173,20 @@ export interface InputRadioProperties extends BaseInputProperties {
   type: 'radio';
 }
 
+export interface InputRangeProperties extends BaseInputProperties {
+  max?: string;
+  min?: string;
+  step?: string;
+  type: 'range';
+}
+
 export type InputProperties =
   | InputCheckboxProperties
   | InputFileProperties
   | InputNumberProperties
   | InputOtherProperties
-  | InputRadioProperties;
+  | InputRadioProperties
+  | InputRangeProperties;
 
 export interface OptionProperties extends Properties {
   selected?: true;
