@@ -18,7 +18,7 @@
         bazelisk = pkgs.bazelisk;
         buildifier = pkgs.buildifier;
         neovim = pkgs.neovim;
-        nodejs = pkgs.nodejs-slim_22;
+        nodejs = pkgs.nodejs-slim_24;
         pnpm = pkgs.pnpm;
       });
     devShells = forAllSystems (system:

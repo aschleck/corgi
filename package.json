@@ -1,36 +1,31 @@
 {
   "type": "module",
   "devDependencies": {
-    "@tailwindcss/node": "^4.2.2",
-    "@tailwindcss/oxide": "^4.2.2",
-    "@tailwindcss/oxide-darwin-arm64": "^4.2.2",
-    "@tailwindcss/oxide-linux-x64-gnu": "^4.2.2",
+    "@tailwindcss/node": "^4.3.3",
+    "@tailwindcss/oxide": "^4.3.3",
+    "@tailwindcss/oxide-darwin-arm64": "^4.3.3",
+    "@tailwindcss/oxide-linux-x64-gnu": "^4.3.3",
     "@types/jest": "^30.0.0",
-    "@types/node": "^25.5.0",
-    "jest": "^30.3.0",
-    "jest-cli": "^30.3.0",
-    "jest-environment-jsdom": "^30.3.0",
-    "jest-junit": "^16.0.0",
-    "lightningcss": "^1.32.0",
-    "lightningcss-darwin-arm64": "^1.32.0",
-    "lightningcss-linux-x64-gnu": "^1.32.0",
-    "postcss": "^8.5.8",
-    "tailwindcss": "^4.2.2",
+    "@types/node": "^24.19.2",
+    "jest": "^30.5.2",
+    "jest-cli": "^30.5.2",
+    "jest-environment-jsdom": "^30.5.2",
+    "jest-junit": "^17.0.0",
+    "lightningcss": "^1.33.0",
+    "lightningcss-darwin-arm64": "^1.33.0",
+    "lightningcss-linux-x64-gnu": "^1.33.0",
+    "postcss": "^8.5.31",
+    "tailwindcss": "^4.3.3",
     "typescript": "6.0.3"
   },
   "dependencies": {
-    "@bufbuild/protobuf": "^2.11.0",
-    "@fastify/cookie": "^11.0.2",
-    "@fastify/reply-from": "^12.6.1",
-    "@fastify/request-context": "^6.2.1",
-    "fastify": "^5.8.2"
+    "@bufbuild/protobuf": "^2.16.0",
+    "@fastify/cookie": "^11.1.3",
+    "@fastify/reply-from": "^12.7.1",
+    "@fastify/request-context": "^7.0.4",
+    "fastify": "^5.12.7"
   },
   "engines": {
-    "node": ">=20.0.0"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "fsevents"
-    ]
+    "node": ">=24.18.0"
   }
 }

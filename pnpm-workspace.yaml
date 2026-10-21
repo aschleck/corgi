@@ -1,0 +1,4 @@
+allowBuilds:
+  '@parcel/watcher': false
+  fsevents: true
+  unrs-resolver: false
