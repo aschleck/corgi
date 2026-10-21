@@ -35,6 +35,9 @@ function tailwindcss() {
             })),
           });
 
+          // Before files: since oxide 4.3, reading files first leaves nothing for scan to return
+          const candidates = scanner.scan();
+
           const addDependency = (file) => {
             result.messages.push({
               type: 'dependency',
@@ -53,7 +56,6 @@ function tailwindcss() {
             onDependency: addDependency,
           };
 
-          const candidates = scanner.scan();
           const ast =
             postcss.parse(
               optimizeCss(
