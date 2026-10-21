@@ -70,6 +70,12 @@ global.window = {
   },
 } as any;
 
+// Avoiding a proper fetch type so callers have broad flexibility on fetch implementation
+export type FetchFn = (
+  url: string,
+  init: {body: string; headers: {[key: string]: string}; method: string},
+) => Promise<{ok: boolean; status: number; statusText: string; json(): Promise<unknown>}>;
+
 // Every string except content and escapedData is escaped for HTML here, so the page can put it in
 // an attribute as is.
 export interface PageOptions {
@@ -90,11 +96,11 @@ vdomCaching.disable();
 export async function serve<Server extends Http2SecureServer>(
         app: ElementFactory,
         page: PageFn,
-        {dataServer, defaultTitle, fastifyOptions, fetchOptions, initialize, host, port}: {
+        {dataServer, defaultTitle, fastifyOptions, fetch, initialize, host, port}: {
           dataServer?: string;
           defaultTitle: string;
           fastifyOptions?: FastifyHttp2Options<Server> | FastifyHttp2SecureOptions<Server>;
-          fetchOptions?: RequestInit;
+          fetch?: FetchFn;
           initialize?: (f: FastifyInstance<Server>) => Promise<void>,
           host?: string;
           port: number;
@@ -159,7 +165,7 @@ export async function serve<Server extends Http2SecureServer>(
             dataServer === 'self'
                 ? `${server.listeningOrigin}/api/data`
                 : (dataServer ?? 'http://127.0.0.1:7070/api/data');
-        const response = await fetch(host, {
+        const response = await (fetch ?? globalThis.fetch)(host, {
             method: 'POST',
             headers: {
               'authorization': request.headers['authorization'] ?? '',
@@ -171,7 +177,6 @@ export async function serve<Server extends Http2SecureServer>(
             body: JSON.stringify({
               keys: missingData,
             }),
-            ...fetchOptions,
           });
 
         if (!response.ok) {
