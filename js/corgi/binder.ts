@@ -407,6 +407,7 @@ function patchController(
   if (was && from && to && from.controller === to.controller && from.key === to.key) {
     checkArgument(deepEqual(from.events, to.events), 'Patching events is not supported');
     checkArgument(deepEqual(from.ref, to.ref), 'Patching ref is not supported');
+    const argsChanged = !deepEqual(was.args, to.args);
     was.args = to.args;
     // The controller's debouncer reads response.state[1] each fire, and
     // response.state is the same tuple as was.state at construction time. On a
@@ -418,7 +419,7 @@ function patchController(
       was.state[0] = to.state[0];
       was.state[1] = to.state[1];
     }
-    if (was.instance) {
+    if (was.instance && argsChanged) {
       was.instance.then(c => { c.updateArgs(to.args); });
     }
     return;

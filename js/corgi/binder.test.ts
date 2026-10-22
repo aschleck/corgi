@@ -152,6 +152,33 @@ test('different args reuse controller', async () => {
   expect(state.updatedArgs).toBe(true);
 });
 
+// A controller's own updateState re-renders its element with a fresh but equal args object. That is
+// not new args, and a controller that loads in updateArgs would otherwise load on every update.
+test('equal args skip updateArgs', async () => {
+  const div = document.createElement('div');
+  document.body.append(div);
+  const binder = new Binder();
+
+  let updates = 0;
+  const updateArgsCallback = () => {updates += 1;};
+  const propsOf = () => ({
+    js: corgi.bind({
+      controller: NoisyController,
+      args: {updateArgsCallback},
+      events: {render: 'wakeup'},
+      state: [{}, (newState: {}) => {}],
+    }),
+  });
+  const originalProps = propsOf();
+  binder.createdElement(div, originalProps);
+  await waitSettled();
+
+  binder.patchedElement(div, originalProps, propsOf());
+  await waitSettled();
+
+  expect(updates).toBe(0);
+});
+
 test('different keys recreate controller', async () => {
   const div = document.createElement('div');
   document.body.append(div);
