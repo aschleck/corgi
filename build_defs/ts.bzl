@@ -73,11 +73,13 @@ def esbuild_binary(
             "@dev_april_corgi//build_defs:esbuild_browser_config.js",
             "@dev_april_corgi//build_defs:esbuild_node_config.js",
             "@dev_april_corgi//build_defs:esbuild_cjs_inject.js",
+            "@dev_april_corgi//build_defs:esbuild_dedupe_plugin.js",
             "@dev_april_corgi//third_party/deanc-esbuild-plugin-postcss:index.js",
         ],
         outs = [
             name + "/esbuild_browser_config.js",
             name + "/esbuild_cjs_inject.js",
+            name + "/esbuild_dedupe_plugin.js",
             name + "/esbuild_node_config.js",
             name + "/index.js",
         ],

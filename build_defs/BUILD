@@ -6,6 +6,7 @@ exports_files([
     "esbuild_browser_config.js",
     "esbuild_node_config.js",
     "esbuild_cjs_inject.js",
+    "esbuild_dedupe_plugin.js",
     "postcss.config.mjs",
     "tailwind.config.mjs",
 ])
