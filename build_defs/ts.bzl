@@ -1,14 +1,16 @@
 load("@aspect_bazel_lib//lib:copy_file.bzl", "copy_file")
+load("@aspect_bazel_lib//lib:directory_path.bzl", "directory_path")
 load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 load("@aspect_rules_jest//jest:defs.bzl", "jest_test")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@aspect_rules_js//js:providers.bzl", "JsInfo", "js_info")
 load("@aspect_rules_ts//ts:defs.bzl", _ts_project = "ts_project")
 
-# Bundles entry_point into name.js, or each of entry_points into a name/ directory. entry_points
-# maps each entry's label to the name of its output file without the extension. Code shared between
-# entries goes into chunk files next to them, so a page and its workers download common
-# dependencies once.
+# Bundles each of entry_points into the name/ directory. entry_points maps each entry's label to the
+# name of its output file without the extension, and entry_point is shorthand for
+# `entry_points = {entry_point: name}`. Code shared between entries goes into chunk files next to
+# them, so a page and its workers download common dependencies once. name_entry points at
+# name/name.js for a js_binary's entry_point.
 def esbuild_binary(
             name,
             entry_point = None,
@@ -18,37 +20,30 @@ def esbuild_binary(
             minify = True,
             **kwargs,
         ):
+    if bool(entry_point) == bool(entry_points):
+        fail("Exactly one of entry_point or entry_points must be set")
+    if entry_point:
+        entry_points = {entry_point: name}
+
     config_dir = name + "_esbuild"
-    if entry_points:
-        _entry_points(
-            name = name + "_entry_points",
-            entry_points = entry_points,
-            deps = deps,
-        )
-        native.filegroup(
-            name = name + "_entry_points_args",
-            srcs = [":" + name + "_entry_points"],
-            output_group = "args",
-        )
-        entry_kwargs = {
-            "args_file": ":" + name + "_entry_points_args",
-            "entry_points": [":" + name + "_entry_points"],
-            "output_dir": True,
-            "splitting": True,
-        }
-    else:
-        has_css = len(native.glob(["*.css"], allow_empty=True)) > 0
-        entry_kwargs = {
-            "entry_point": entry_point,
-            "output_css": "%s.css" % name if has_css else None,
-            "srcs": [entry_point],
-        }
+    _entry_points(
+        name = name + "_entry_points",
+        entry_points = entry_points,
+        deps = deps,
+    )
+    native.filegroup(
+        name = name + "_entry_points_args",
+        srcs = [":" + name + "_entry_points"],
+        output_group = "args",
+    )
 
     esbuild(
         name = name,
+        args_file = ":" + name + "_entry_points_args",
         config = ":" + config_dir + (
             "/esbuild_browser_config.js" if platform == "browser" else "/esbuild_node_config.js"
         ),
+        entry_points = [":" + name + "_entry_points"],
         tsconfig = "//:tsconfig",
         define = {
             "process.env.CORGI_FOR_BROWSER": "true" if platform == "browser" else "false",
@@ -59,10 +54,18 @@ def esbuild_binary(
         ],
         format = "esm",
         minify = minify,
+        output_dir = True,
         platform = platform,
         sources_content = True,
+        splitting = True,
         target = "es2022",
-        **(entry_kwargs | kwargs),
+        **kwargs,
+    )
+
+    directory_path(
+        name = name + "_entry",
+        directory = ":" + name,
+        path = name + ".js",
     )
 
     js_library(
