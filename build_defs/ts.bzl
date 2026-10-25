@@ -5,25 +5,51 @@ load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@aspect_rules_js//js:providers.bzl", "JsInfo", "js_info")
 load("@aspect_rules_ts//ts:defs.bzl", _ts_project = "ts_project")
 
+# Bundles entry_point into name.js, or each of entry_points into a name/ directory. entry_points
+# maps each entry's label to the name of its output file without the extension. Code shared between
+# entries goes into chunk files next to them, so a page and its workers download common
+# dependencies once.
 def esbuild_binary(
             name,
             entry_point = None,
+            entry_points = None,
             deps = None,
             platform = "browser",
             minify = True,
             **kwargs,
         ):
-    has_css = len(native.glob(["*.css"], allow_empty=True)) > 0
+    config_dir = name + "_esbuild"
+    if entry_points:
+        _entry_points(
+            name = name + "_entry_points",
+            entry_points = entry_points,
+            deps = deps,
+        )
+        native.filegroup(
+            name = name + "_entry_points_args",
+            srcs = [":" + name + "_entry_points"],
+            output_group = "args",
+        )
+        entry_kwargs = {
+            "args_file": ":" + name + "_entry_points_args",
+            "entry_points": [":" + name + "_entry_points"],
+            "output_dir": True,
+            "splitting": True,
+        }
+    else:
+        has_css = len(native.glob(["*.css"], allow_empty=True)) > 0
+        entry_kwargs = {
+            "entry_point": entry_point,
+            "output_css": "%s.css" % name if has_css else None,
+            "srcs": [entry_point],
+        }
+
     esbuild(
         name = name,
-        config = ":" + name + (
+        config = ":" + config_dir + (
             "/esbuild_browser_config.js" if platform == "browser" else "/esbuild_node_config.js"
         ),
-        entry_point = entry_point,
         tsconfig = "//:tsconfig",
-        srcs = [
-            entry_point,
-        ],
         define = {
             "process.env.CORGI_FOR_BROWSER": "true" if platform == "browser" else "false",
         },
@@ -33,11 +59,10 @@ def esbuild_binary(
         ],
         format = "esm",
         minify = minify,
-        output_css = "%s.css" % name if has_css else None,
         platform = platform,
         sources_content = True,
         target = "es2022",
-        **kwargs,
+        **(entry_kwargs | kwargs),
     )
 
     js_library(
@@ -63,7 +88,7 @@ def esbuild_binary(
     _expand_tailwind_config(
         name = name + "_postcss_config",
         deps = deps,
-        output = name + "/postcss.config.mjs",
+        output = config_dir + "/postcss.config.mjs",
         template = "@dev_april_corgi//build_defs:postcss.config.mjs",
     )
 
@@ -77,16 +102,16 @@ def esbuild_binary(
             "@dev_april_corgi//third_party/deanc-esbuild-plugin-postcss:index.js",
         ],
         outs = [
-            name + "/esbuild_browser_config.js",
-            name + "/esbuild_cjs_inject.js",
-            name + "/esbuild_dedupe_plugin.js",
-            name + "/esbuild_node_config.js",
-            name + "/index.js",
+            config_dir + "/esbuild_browser_config.js",
+            config_dir + "/esbuild_cjs_inject.js",
+            config_dir + "/esbuild_dedupe_plugin.js",
+            config_dir + "/esbuild_node_config.js",
+            config_dir + "/index.js",
         ],
         cmd = "\n".join([
-            "mkdir -p \"$(@D)/" + name + "\"",
+            "mkdir -p \"$(@D)/" + config_dir + "\"",
             "for i in $(SRCS); do",
-            "  cp \"$${i}\" \"$(@D)/" + name + "/$$(basename \"$${i}\")\"",
+            "  cp \"$${i}\" \"$(@D)/" + config_dir + "/$$(basename \"$${i}\")\"",
             "done",
         ]),
     )
@@ -250,3 +275,40 @@ _expand_tailwind_config = rule(
     }),
 )
 
+def _entry_points_impl(ctx):
+    # esbuild needs the copies of the entries in the bin directory or it can't find their imports.
+    # The ts_projects in deps already made those copies, so we look them up rather than copying
+    # entries from other packages, which copy_to_bin refuses to do.
+    bin_files = {}
+    for dep in ctx.attr.deps:
+        for f in dep[JsInfo].transitive_sources.to_list():
+            if not f.is_source:
+                bin_files[f.short_path] = f
+
+    entries = []
+    names = {}
+    for target, out in ctx.attr.entry_points.items():
+        for src in target.files.to_list():
+            entry = bin_files.get(src.short_path)
+            if not entry:
+                fail("%s isn't in the sources of any dep" % src.short_path)
+            entries.append(entry)
+            names[out] = entry.path[len(ctx.bin_dir.path) + 1:]
+
+    # The launcher merges this over the arguments the esbuild rule computes, so this replaces its
+    # list of entry points with a map that names each output.
+    args = ctx.actions.declare_file(ctx.label.name + "_args.json")
+    ctx.actions.write(args, json.encode({"entryPoints": names}))
+
+    return [
+        DefaultInfo(files = depset(entries)),
+        OutputGroupInfo(args = depset([args])),
+    ]
+
+_entry_points = rule(
+    implementation = _entry_points_impl,
+    attrs = {
+        "deps": attr.label_list(providers = [JsInfo]),
+        "entry_points": attr.label_keyed_string_dict(allow_files = True, mandatory = True),
+    },
+)
