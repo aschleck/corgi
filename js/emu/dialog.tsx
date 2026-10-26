@@ -80,18 +80,13 @@ function Dialog(
             corgi: [[CLOSE, 'close']],
           },
         })}
-        className="fixed inset-0 z-50">
+        className="fixed flex inset-0 items-center justify-center z-50">
       <div
           className="absolute bg-black/25 inset-0 dark:bg-black/50"
           unboundEvents={{click: 'outsideClose'}}
       >
       </div>
-      <div
-          className={
-            `absolute max-h-[90vh] max-w-[90vw] left-1/2 overflow-y-auto top-1/2 transform `
-                + `-translate-x-1/2 -translate-y-1/2`
-          }
-      >
+      <div className="max-h-[90vh] max-w-[90vw] overflow-y-auto relative">
         {children}
       </div>
     </div>
