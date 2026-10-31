@@ -47,6 +47,7 @@ interface PropertyKeyToHandlerMap<C> {
   mouseover: AMethodOnWithParameters<C, [CustomEvent<MouseEvent>]>;
   mouseout: AMethodOnWithParameters<C, [CustomEvent<MouseEvent>]>;
   mouseup: AMethodOnWithParameters<C, [CustomEvent<MouseEvent>]>;
+  paste: AMethodOnWithParameters<C, [CustomEvent<ClipboardEvent>]>;
   pointercancel: AMethodOnWithParameters<C, [CustomEvent<PointerEvent>]>;
   pointerdown: AMethodOnWithParameters<C, [CustomEvent<PointerEvent>]>;
   pointerenter: AMethodOnWithParameters<C, [CustomEvent<PointerEvent>]>;
