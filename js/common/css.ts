@@ -69,6 +69,7 @@ function parseCssFontFace(stream: CssStream): TFontFace {
   };
 }
 
+// Each range excludes its end, the same way for a single code point as for a span.
 function parseFontFaceRanges(tokens: Token[], stream: CssStream): Array<[number, number]> {
   const ranges: Array<[number, number]> = [];
   let i = 0;
@@ -79,7 +80,7 @@ function parseFontFaceRanges(tokens: Token[], stream: CssStream): Array<[number,
 
     const ends = stream.text.substring(tokens[i].start, tokens[i].end).split('-');
     if (ends.length === 2) {
-      ranges.push([parseUnicodeCode(ends[0]), parseUnicodeCode(ends[1])]);
+      ranges.push([parseUnicodeCode(ends[0]), parseUnicodeCode(ends[1]) + 1]);
     } else if (ends.length === 1) {
       const single = parseUnicodeCode(ends[0]);
       ranges.push([single, single + 1]);
