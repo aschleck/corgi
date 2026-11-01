@@ -4,7 +4,8 @@ import { deepEqual } from '../common/comparisons';
 
 import { AnyProperties, Properties } from './elements';
 
-export const FRAGMENT_MARKER = Symbol();
+// Servers may load multiple compiled corgi bundles, so they all have to share one fragment marker.
+export const FRAGMENT_MARKER: unique symbol = Symbol.for('corgi.fragment');
 
 type Handle = {__brand: 'Handle'} & {
   id: number;

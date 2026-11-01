@@ -11,12 +11,18 @@ load("@aspect_rules_ts//ts:defs.bzl", _ts_project = "ts_project")
 # `entry_points = {entry_point: name}`. Code shared between entries goes into chunk files next to
 # them, so a page and its workers download common dependencies once. name_entry points at
 # name/name.js for a js_binary's entry_point.
+#
+# plugins adds esbuild plugins to the build, like
+# `plugins = {"//js/i18n:esbuild_plugin.mjs": {"locale": "en-US"}}`. We call each file's default
+# export with its options and use what it returns as the plugin. The file must be in this
+# repository, and its js_library must also be in deps.
 def esbuild_binary(
             name,
             entry_point = None,
             entry_points = None,
             deps = None,
             platform = "browser",
+            plugins = None,
             minify = True,
             **kwargs,
         ):
@@ -72,6 +78,7 @@ def esbuild_binary(
         name = name + "_esbuild_config",
         srcs = [
             ":" + name + "_esbuild_config_copy",
+            ":" + name + "_extra_plugins",
             ":" + name + "_postcss_config",
         ],
         deps = [
@@ -93,6 +100,12 @@ def esbuild_binary(
         deps = deps,
         output = config_dir + "/postcss.config.mjs",
         template = "@dev_april_corgi//build_defs:postcss.config.mjs",
+    )
+
+    _extra_plugins(
+        name = name + "_extra_plugins",
+        config_dir = config_dir,
+        plugins = plugins or {},
     )
 
     native.genrule(
@@ -117,6 +130,30 @@ def esbuild_binary(
             "  cp \"$${i}\" \"$(@D)/" + config_dir + "/$$(basename \"$${i}\")\"",
             "done",
         ]),
+    )
+
+# Writes config_dir/esbuild_extra_plugins.js, which the esbuild configs spread into their plugins.
+def _extra_plugins(name, config_dir, plugins):
+    # The config sits in bazel-bin/<package>/<config_dir>/ and imports each plugin from its place
+    # in bazel-bin.
+    package = native.package_name()
+    depth = (len(package.split("/")) if package else 0) + 1
+    up = "../" * depth
+    lines = []
+    calls = []
+    for i, (label, options) in enumerate(plugins.items()):
+        resolved = native.package_relative_label(label)
+        if resolved.workspace_name:
+            fail("Plugins must be in this repository: " + label)
+        path = (resolved.package + "/" if resolved.package else "") + resolved.name
+        lines.append("import plugin%d from '%s%s';" % (i, up, path))
+        calls.append("plugin%d(%s)" % (i, json.encode(options)))
+    lines.append("export default [%s];" % ", ".join(calls))
+
+    native.genrule(
+        name = name,
+        outs = [config_dir + "/esbuild_extra_plugins.js"],
+        cmd = "cat > $@ <<'EOF'\n%s\nEOF" % "\n".join(lines).replace("$", "$$"),
     )
 
 def c_ts_project(
