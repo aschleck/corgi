@@ -23,9 +23,12 @@ declare global {
       code: Properties;
       circle: CircleProperties;
       clipPath: Properties;
+      dd: Properties;
       defs: Properties;
       details: Properties;
       div: Properties;
+      dl: Properties;
+      dt: Properties;
       form: Properties;
       footer: Properties;
       g: GroupProperties;
@@ -144,6 +147,9 @@ export interface InputFileProperties extends BaseInputProperties {
   capture?: string;
   multiple?: boolean;
   type: 'file';
+  // Lets the user pick a directory, every file under which is selected. Despite the prefix it is
+  // supported by every major browser.
+  webkitdirectory?: boolean;
 }
 
 export interface InputNumberProperties extends BaseInputProperties {
