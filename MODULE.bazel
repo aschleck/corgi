@@ -23,7 +23,7 @@ npm.npm_translate_lock(
 
 use_repo(npm, "npm")
 
-rules_ts_ext = use_extension("@aspect_rules_ts//ts:extensions.bzl", "ext", isolate = True)
+rules_ts_ext = use_extension("@aspect_rules_ts//ts:extensions.bzl", "typescript", isolate = True)
 
 rules_ts_ext.deps(version_from = "//:package.json")
 
