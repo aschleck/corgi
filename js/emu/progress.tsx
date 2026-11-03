@@ -33,6 +33,7 @@ export function IndeterminantLinear({fill}: {fill?: `before:bg-${string}`}) {
             absolute
             h-1
             left-0
+            overflow-hidden
             right-0
             select-none
             top-0
