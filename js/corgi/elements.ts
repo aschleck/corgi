@@ -92,6 +92,7 @@ export interface Properties {
   style?: string; // TODO(april): this is sad
   tabindex?: string;
   title?: string;
+  translate?: 'no'|'yes';
   unboundEvents?: UnboundEvents;
 }
 
