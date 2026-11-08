@@ -81,8 +81,8 @@ export class Query {
             e,
             candidate =>
               candidate.getAttribute('data-ref') === ref
-                || candidate.getAttribute('data-js-ref') == ref,
-            parent => !parent.hasAttribute('data-js')));
+                || candidate.getAttribute('jsref') == ref,
+            parent => !parent.hasAttribute('jscontroller')));
     return new Query(found);
   }
 }

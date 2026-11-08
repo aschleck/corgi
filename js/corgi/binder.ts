@@ -7,6 +7,7 @@ import { Controller, ControllerCtor, ControllerDeps, ControllerDepsMethod, Respo
 import { elementFinder, parentFinder, QueryOne, SupportedElement } from './dom';
 import { Properties } from './elements';
 import { EventSpec, qualifiedName } from './events';
+import { Model, ModelCtor, ModelDeps } from './model';
 import { isAnchorContextClick } from './mouse';
 import { Service, ServiceDeps } from './service';
 import { DepsConstructorsFor } from './types';
@@ -63,11 +64,14 @@ type StateTuple<S> = [S, (newState: S) => void];
 
 interface BoundController<C extends Controller<any, any, any, any>> {
   args: C['_A'];
-  controller: ControllerCtor<C>;
+  // Unset when the element only binds a model
+  controller: ControllerCtor<C>|undefined;
   disposer: Disposable;
   events: Partial<PropertyKeyToHandlerMap<C>>;
   instance?: Future<C>;
   key?: string; // controllers will only be reused if their keys match
+  model: ModelCtor<any>|undefined;
+  modelInstance?: Future<Model<any>>;
   ref?: string;
   state: StateTuple<C['_S']>;
 }
@@ -84,30 +88,47 @@ export type UnboundEvents =
     >;
 ;
 
-export function bind<C extends Controller<any, any, any, any>>({
+/**
+ * Binds a controller, a model, or both to an element. A controller on the same element as a model
+ * can inject it.
+ */
+export function bind<C extends Controller<any, any, any, any>>(spec: {
+  controller: ControllerCtor<C>;
+  events?: Partial<PropertyKeyToHandlerMap<C>>;
+  key?: string;
+  model?: ModelCtor<any>;
+  ref?: string;
+}
+& ({} extends C['_A'] ? {args?: C['_A']} : {args: C['_A']})
+& (undefined extends C['_S'] ? {state?: never} : {state: StateTuple<C['_S']>})
+): BoundController<C>;
+export function bind(spec: {model: ModelCtor<any>}): AnyBoundController;
+export function bind({
   args,
   controller,
   events,
   key,
+  model,
   ref,
   state,
 }: {
-  controller: ControllerCtor<C>;
-  events?: Partial<PropertyKeyToHandlerMap<C>>;
+  args?: {};
+  controller?: ControllerCtor<any>;
+  events?: Partial<PropertyKeyToHandlerMap<any>>;
   key?: string;
+  model?: ModelCtor<any>;
   ref?: string;
-}
-& ({} extends C['_A'] ? {args?: {}} : {args: C['_A']})
-& (undefined extends C['_S'] ? {state?: never} : {state: StateTuple<C['_S']>})
-): BoundController<C> {
+  state?: StateTuple<any>;
+}): AnyBoundController {
   return {
-    args: args ?? {} as any,
+    args: args ?? {},
     controller,
     disposer: new Disposable(),
     events: events ?? {},
     key,
+    model,
     ref,
-    state: state ?? [undefined, () => {}] as any,
+    state: state ?? [undefined, () => {}],
   };
 }
 
@@ -151,11 +172,7 @@ export class Binder implements Listener {
 
   createdElement(element: Element, props: Properties): void {
     if (props.js) {
-      element.setAttribute('data-js', '');
-      if (props.js.ref) {
-        element.setAttribute('data-js-ref', props.js.ref);
-      }
-
+      setBindingAttributes(element, props.js);
       this.pushAction({
         kind: 'ac',
         element: element as SupportedElement,
@@ -209,15 +226,18 @@ export class Binder implements Listener {
       return;
     }
     this.promise = Promise.resolve().then(() => {
+      // The vdom reports children before their parents, so a render that creates a controller waits
+      // for the whole batch or else the models above it aren't bound yet.
+      const renders: Array<() => void> = [];
       for (const action of this.actions) {
         if (action.kind === 'ac') {
-          bindController(action.element, action.js);
+          bindElement(action.element, action.js, renders);
         } else if (action.kind === 'au') {
           bindUnbound(action.element, action.unboundEvents);
         } else if (action.kind === 'de') {
           disposeBoundElementsIn(action.element);
         } else if (action.kind === 'pc') {
-          patchController(action.element, action.from, action.to);
+          patchController(action.element, action.from, action.to, renders);
         } else if (action.kind === 'pu') {
           patchUnbound(action.element, action.from, action.to);
         } else {
@@ -226,14 +246,59 @@ export class Binder implements Listener {
       }
       this.actions.length = 0;
       this.promise = undefined;
+      for (const render of renders) {
+        render();
+      }
     });
   }
 }
 
 const elementsToControllerSpecs = new WeakMap<SupportedElement, AnyBoundController>();
+const elementsToModelSpecs = new WeakMap<SupportedElement, AnyBoundController>();
 const elementsToUnboundDisposers = new WeakMap<SupportedElement, Disposable>();
 
-function bindController(root: SupportedElement, spec: AnyBoundController): void {
+interface BroadcastListener {
+  handler: string;
+  root: SupportedElement;
+  spec: AnyBoundController;
+}
+
+// Lets a model's broadcast reach controllers that haven't been created yet.
+const broadcastListeners = new Map<string, Set<BroadcastListener>>();
+
+// A model-only element gets jsmodel rather than jscontroller. disposeBoundElementsIn looks for it.
+// jscontroller would wrongly stop fetchControllerDeps from searching inside the element.
+function setBindingAttributes(element: Element, spec: AnyBoundController): void {
+  if (spec.controller) {
+    element.setAttribute('jscontroller', '');
+    if (spec.ref) {
+      element.setAttribute('jsref', spec.ref);
+    }
+  }
+  if (spec.model) {
+    element.setAttribute('jsmodel', '');
+  }
+}
+
+function bindElement(
+    root: SupportedElement, spec: AnyBoundController, renders: Array<() => void>): void {
+  if (spec.model) {
+    bindModel(root, spec);
+  }
+  if (spec.controller) {
+    bindController(root, spec, renders);
+  }
+}
+
+function bindModel(root: SupportedElement, spec: AnyBoundController): void {
+  elementsToModelSpecs.set(root, spec);
+  spec.disposer.registerDisposer(() => {
+    elementsToModelSpecs.delete(root);
+  });
+}
+
+function bindController(
+    root: SupportedElement, spec: AnyBoundController, renders: Array<() => void>): void {
   const disposer = spec.disposer;
   elementsToControllerSpecs.set(root, spec);
   disposer.registerDisposer(() => {
@@ -249,9 +314,24 @@ function bindController(root: SupportedElement, spec: AnyBoundController): void 
   }
 
   for (const [eventSpec, handler] of spec.events.corgi ?? []) {
+    const name = qualifiedName(eventSpec);
+    let listeners = broadcastListeners.get(name);
+    if (!listeners) {
+      listeners = new Set();
+      broadcastListeners.set(name, listeners);
+    }
+    const listener = {handler: handler as string, root, spec};
+    listeners.add(listener);
+    disposer.registerDisposer(() => {
+      listeners.delete(listener);
+      if (listeners.size === 0) {
+        broadcastListeners.delete(name);
+      }
+    });
+
     disposer.registerListener(
         root,
-        qualifiedName(eventSpec) as any,
+        name as any,
         e => {
           if (root === e.srcElement) {
             return;
@@ -268,9 +348,15 @@ function bindController(root: SupportedElement, spec: AnyBoundController): void 
 
   if (spec.events.render) {
     const handler = spec.events.render;
-    maybeInstantiateAndCall(root, spec, (controller: any) => {
-      const method = controller[handler];
-      method.apply(controller, []);
+    renders.push(() => {
+      // Disposed by a later action in the same batch
+      if (elementsToControllerSpecs.get(root) !== spec) {
+        return;
+      }
+      maybeInstantiateAndCall(root, spec, (controller: any) => {
+        const method = controller[handler];
+        method.apply(controller, []);
+      });
     });
   }
 }
@@ -369,16 +455,17 @@ function maybeInstantiateAndCall<E extends SupportedElement, R>(
     root: E,
     spec: AnyBoundController,
     fn: (controller: AnyBoundController) => R): Future<R> {
+  const ctor = checkExists(spec.controller);
   if (!spec.instance) {
     let deps;
-    if (spec.controller.deps) {
-      deps = fetchControllerDeps(spec.controller.deps(), root);
+    if (ctor.deps) {
+      deps = fetchControllerDeps(ctor.deps(), root);
     } else {
       deps = resolvedFuture({});
     }
 
     spec.instance = deps.then(d => {
-      const instance = new spec.controller({
+      const instance = new ctor({
         root,
         args: spec.args,
         deps: d,
@@ -393,19 +480,80 @@ function maybeInstantiateAndCall<E extends SupportedElement, R>(
     .instance
     .then(instance => fn(instance))
     .catch(e => {
-      console.error(`Failed to construct controller ${spec.controller.name}`, e);
+      console.error(`Failed to construct controller ${ctor.name}`, e);
       throw e;
     });
+}
+
+function maybeInstantiateModel(root: SupportedElement, spec: AnyBoundController):
+    Future<Model<any>> {
+  if (!spec.modelInstance) {
+    const ctor = checkExists(spec.model);
+    // A model can depend on models above it. It can't depend on one on its own element, because
+    // an element binds at most one model.
+    const deps =
+        ctor.deps
+            ? fetchModelDeps(ctor.deps(), root.parentElement as SupportedElement|null)
+            : resolvedFuture({});
+    spec.modelInstance = deps.then(d => {
+      const instance = new ctor({
+        deps: d,
+        broadcast: <S>(eventSpec: EventSpec<S>, detail: S) => {
+          broadcast(root, ctor, eventSpec, detail);
+        },
+      });
+      spec.disposer.registerDisposable(instance);
+      return instance;
+    });
+  }
+  return spec.modelInstance;
+}
+
+function findModel(from: SupportedElement|null, ctor: ModelCtor<any>): Future<Model<any>> {
+  const root =
+      from ? parentFinder(from, candidate => elementsToModelSpecs.get(candidate)?.model === ctor)
+          : undefined;
+  if (!root) {
+    throw new Error(`Unable to find a ${ctor.name} model`);
+  }
+  return maybeInstantiateModel(root, checkExists(elementsToModelSpecs.get(root)));
+}
+
+function broadcast<S>(
+    modelRoot: SupportedElement, ctor: ModelCtor<any>, eventSpec: EventSpec<S>, detail: S): void {
+  const name = qualifiedName(eventSpec);
+  for (const {handler, root, spec} of [...broadcastListeners.get(name) ?? []]) {
+    if (!modelRoot.contains(root)) {
+      continue;
+    }
+    const nearest =
+        parentFinder(root, candidate => elementsToModelSpecs.get(candidate)?.model === ctor);
+    if (nearest !== modelRoot) {
+      continue;
+    }
+
+    maybeInstantiateAndCall(root, spec, (controller: any) => {
+      const method = controller[handler] as (e: CustomEvent<S>) => unknown;
+      method.call(controller, new CustomEvent(name, {detail}));
+    });
+  }
 }
 
 function patchController(
     element: SupportedElement,
     from: AnyBoundController|undefined,
-    to: AnyBoundController|undefined) {
+    to: AnyBoundController|undefined,
+    renders: Array<() => void>) {
   checkArgument(from ?? to, 'At least one of from or to must be defined');
 
-  const was = elementsToControllerSpecs.get(element);
-  if (was && from && to && from.controller === to.controller && from.key === to.key) {
+  const was = elementsToControllerSpecs.get(element) ?? elementsToModelSpecs.get(element);
+  if (
+      was
+          && from
+          && to
+          && from.controller === to.controller
+          && from.key === to.key
+          && from.model === to.model) {
     checkArgument(deepEqual(from.events, to.events), 'Patching events is not supported');
     checkArgument(deepEqual(from.ref, to.ref), 'Patching ref is not supported');
     const argsChanged = !deepEqual(was.args, to.args);
@@ -428,15 +576,14 @@ function patchController(
 
   if (was) {
     was.disposer.dispose();
-    element.removeAttribute('data-js');
-    element.removeAttribute('data-js-ref');
+    element.removeAttribute('jscontroller');
+    element.removeAttribute('jsmodel');
+    element.removeAttribute('jsref');
   }
 
   if (to) {
-    bindController(element, to);
-    if (to.ref) {
-      element.setAttribute('data-js-ref', to.ref);
-    }
+    setBindingAttributes(element, to);
+    bindElement(element, to, renders);
   }
 }
 
@@ -470,8 +617,15 @@ export const serviceSingletons = new Map<AnyServiceCtor, Promise<Service<any>>>(
 
 function fetchControllerDeps<D extends ControllerDeps>(
     deps: DepsConstructorsFor<D>, root: SupportedElement): Future<D> {
-  const response: D = {controllers: {}, controllerss: {}, services: {}} as D;
+  const response: D = {controllers: {}, controllerss: {}, models: {}, services: {}} as D;
   const promises: Array<Promise<unknown>> = [];
+
+  for (const [key, ctor] of Object.entries(deps.models ?? {})) {
+    promises.push(
+        findModel(root, ctor as ModelCtor<any>).then(model => {
+          response.models[key] = model;
+        }));
+  }
 
   for (const [key, untypedCtor] of Object.entries(deps.controllers ?? {})) {
     const ctor = untypedCtor as ControllerCtor<any>;
@@ -479,8 +633,8 @@ function fetchControllerDeps<D extends ControllerDeps>(
     const elements =
         elementFinder(
             root,
-            candidate => candidate.getAttribute('data-js-ref') === key,
-            parent => !parent.hasAttribute('data-js'));
+            candidate => candidate.getAttribute('jsref') === key,
+            parent => !parent.hasAttribute('jscontroller'));
     if (elements.length > 1) {
       throw new Error(`Dependency key '${key}' matched ${elements.length} controllers`);
     } else if (elements.length === 0) {
@@ -507,8 +661,8 @@ function fetchControllerDeps<D extends ControllerDeps>(
     const elements =
         elementFinder(
             root,
-            candidate => candidate.getAttribute('data-js-ref') === key,
-            parent => !parent.hasAttribute('data-js'));
+            candidate => candidate.getAttribute('jsref') === key,
+            parent => !parent.hasAttribute('jscontroller'));
 
     const instances = [];
     for (const element of elements) {
@@ -531,6 +685,21 @@ function fetchControllerDeps<D extends ControllerDeps>(
         }));
   }
 
+  return asFuture(Promise.all(promises))
+      .then(() => fetchServiceDeps(deps))
+      .then(sr => Object.assign(response, sr));
+}
+
+function fetchModelDeps<D extends ModelDeps>(
+    deps: DepsConstructorsFor<D>, from: SupportedElement|null): Future<D> {
+  const response: D = {models: {}, services: {}} as D;
+  const promises: Array<Promise<unknown>> = [];
+  for (const [key, ctor] of Object.entries(deps.models ?? {})) {
+    promises.push(
+        findModel(from, ctor as ModelCtor<any>).then(model => {
+          response.models[key] = model;
+        }));
+  }
   return asFuture(Promise.all(promises))
       .then(() => fetchServiceDeps(deps))
       .then(sr => Object.assign(response, sr));
@@ -570,8 +739,11 @@ export function disposeBoundElementsIn(node: Node): void {
   if (!(node instanceof HTMLElement) && !(node instanceof SVGElement)) {
     return;
   }
-  for (const root of [node, ...node.querySelectorAll('[data-js]')]) {
-    const spec = elementsToControllerSpecs.get(root as SupportedElement);
+  // Disposes children first so a controller's dispose can still use its model.
+  const roots = [node, ...node.querySelectorAll('[jscontroller], [jsmodel]')].reverse();
+  for (const root of roots) {
+    const element = root as SupportedElement;
+    const spec = elementsToControllerSpecs.get(element) ?? elementsToModelSpecs.get(element);
     spec?.disposer.dispose();
   }
 }

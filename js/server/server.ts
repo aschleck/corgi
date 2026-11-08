@@ -285,9 +285,14 @@ function renderProperties(props: Properties): string {
     } else if (key === 'children' || key === 'unboundEvents') {
       continue;
     } else if (key === 'js') {
-      attributes.push('data-js');
-      if (value.ref) {
-        actualKey = 'data-js-ref';
+      if (value.controller) {
+        attributes.push('jscontroller');
+      }
+      if (value.model) {
+        attributes.push('jsmodel');
+      }
+      if (value.controller && value.ref) {
+        actualKey = 'jsref';
         actualValue = value.ref;
       } else {
         continue;

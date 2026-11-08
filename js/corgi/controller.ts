@@ -3,12 +3,15 @@ import { Disposable } from '../common/disposable';
 
 import { QueryOne, SupportedElement } from './dom';
 import { EventSpec, qualifiedName } from './events';
+import { Model } from './model';
 import { ServiceDeps } from './service';
 import { DepsConstructed, DepsConstructorsFor } from './types';
 
 export type ControllerDeps = ServiceDeps & {
   controllers: {[ref: string]: Controller<any, any, any, any>};
   controllerss: {[ref: string]: Array<Controller<any, any, any, any>>};
+  // The nearest model of each type bound at or above the controller's element
+  models: {[key: string]: Model<any>};
 };
 
 export type ControllerDepsMethod = () => DepsConstructorsFor<ControllerDeps>;

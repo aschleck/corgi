@@ -1069,7 +1069,7 @@ test('keys: swapping two keyed siblings reorders DOM', async () => {
 
   expect(document.body.innerHTML)
       .toBe(
-          '<div data-swapper="" data-js="">'
+          '<div data-swapper="" jscontroller="">'
               + '<span data-k="a">a</span>'
               + '<span data-k="b">b</span>'
               + '</div>');
@@ -1079,7 +1079,7 @@ test('keys: swapping two keyed siblings reorders DOM', async () => {
 
   expect(document.body.innerHTML)
       .toBe(
-          '<div data-swapper="" data-js="">'
+          '<div data-swapper="" jscontroller="">'
               + '<span data-k="b">b</span>'
               + '<span data-k="a">a</span>'
               + '</div>');

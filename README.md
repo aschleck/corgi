@@ -103,6 +103,49 @@ export function CookierClickerElement(
 }
 ```
 
+### Models
+
+Models hold DOM-scoped state that several controllers can share by injecting it.
+
+```tsx
+<div js={corgi.bind({model: FeatureStoreModel})}>
+  <div
+      js={corgi.bind({
+        controller: FeatureTreeController,
+        events: {corgi: [[FEATURES_CHANGED, 'changed']]},
+      })}
+  />
+</div>
+```
+
+```ts
+export const FEATURES_CHANGED = declareEvent<{ids: string[]}>('featuresChanged');
+
+class FeatureStoreModel extends Model<EmptyDeps> {
+  apply(changes: Change[]): void {
+    // ...
+    this.broadcast(FEATURES_CHANGED, {ids});
+  }
+}
+
+class FeatureTreeController extends Controller<{}, Deps, HTMLElement, State> {
+  static deps() {
+    return {
+      models: {
+        store: FeatureStoreModel,
+      },
+    };
+  }
+
+  changed(e: CustomEvent<{ids: string[]}>): void {
+    // ...
+  }
+}
+```
+
+`broadcast` calls every controller under the model with a binding to the event type. Controllers
+that haven't yet been initialized will be.
+
 ## Caution
 
 Please note that this is a fairly yolo Bazel module. I do have multiple projects depending on it but don't aim
