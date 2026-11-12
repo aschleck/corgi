@@ -12,11 +12,6 @@ exports_files([
 ])
 
 js_library(
-    name = "css_types",
-    srcs = ["css.d.ts"],
-)
-
-js_library(
     name = "jest_config",
     srcs = [
         "jest.config.js",

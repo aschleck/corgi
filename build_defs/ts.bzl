@@ -142,13 +142,28 @@ def c_ts_project(
         allow_empty=True,
         exclude = test_srcs or ["*.test.ts", "*.test.tsx"]
     )
-    has_css = len(native.glob(["*.css"], allow_empty=True)) > 0
+    css_files = native.glob(["*.css"], allow_empty=True)
+    has_css = len(css_files) > 0
+    # tsc only reads the srcs and the files they import, so each stylesheet gets a declaration that
+    # `import './x.css'` resolves to.
+    for css in css_files:
+        rule_name = "_" + css + "_types"
+        if not native.existing_rule(rule_name):
+            native.genrule(
+                name = rule_name,
+                outs = [css + ".d.ts"],
+                cmd = "echo 'export {};' > $@",
+                tags = tags,
+                target_compatible_with = target_compatible_with,
+                testonly = testonly,
+            )
+        srcs = srcs + [":" + rule_name]
 
     ts_project(
         name = name,
         srcs = srcs,
         data = data,
-        deps = (deps or []) + (["@dev_april_corgi//build_defs:css_types"] if has_css else []),
+        deps = deps or [],
         tags = tags,
         target_compatible_with = target_compatible_with,
         testonly = testonly,
@@ -213,6 +228,7 @@ def c_ts_project(
             timeout = test_timeout,
             data = (test_data or []) + [
                 ":tests",
+                "//:package_json",
                 "//:tsconfig",
             ],
         )
@@ -220,15 +236,17 @@ def c_ts_project(
 def ts_project(name, srcs, deps = None, **kwargs):
     _ts_project(
         name = name,
-        assets = srcs + [
-            "//:package_json",
-        ],
+        assets = srcs,
         allow_js = True,
         composite = True,
+        declaration = True,
         deps = deps or [],
         srcs = srcs,
         transpiler = "tsc",
-        tsconfig = "//:tsconfig",
+        # Generate a per-target tsconfig that extends our root tsconfig to avoid compiling the
+        # entire bin dir.
+        tsconfig = {},
+        extends = "//:tsconfig",
         **kwargs
     )
 
